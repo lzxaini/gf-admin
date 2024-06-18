@@ -1,13 +1,13 @@
 <template>
-  <div class="sidebar-logo-container" :class="{ 'collapse': collapse }" :style="{ backgroundColor: sideTheme === 'theme-dark' ? variables.menuBackground : variables.menuLightBackground }">
+  <div class="sidebar-logo-container" :class="{ 'collapse': collapse }"  :style="{ backgroundColor: isThemeBackground() }">
     <transition name="sidebarLogoFade">
       <router-link v-if="collapse" key="collapse" class="sidebar-logo-link" to="/">
         <img v-if="logo" :src="logo" class="sidebar-logo" />
-        <h1 v-else class="sidebar-title" :style="{ color: sideTheme === 'theme-dark' ? variables.logoTitleColor : variables.logoLightTitleColor }">{{ title }}</h1>
+        <h1 v-else class="sidebar-title" :style="{ color: isLogoTitleColor() }">{{ title }}</h1>
       </router-link>
       <router-link v-else key="expand" class="sidebar-logo-link" to="/">
         <img v-if="logo" :src="logo" class="sidebar-logo" />
-        <h1 class="sidebar-title" :style="{ color: sideTheme === 'theme-dark' ? variables.logoTitleColor : variables.logoLightTitleColor }">{{ title }}</h1>
+        <h1 class="sidebar-title" :style="{ color: isLogoTitleColor() }">{{ title }}</h1>
       </router-link>
     </transition>
   </div>
@@ -28,6 +28,34 @@ defineProps({
 const title = import.meta.env.VITE_APP_TITLE;
 const settingsStore = useSettingsStore();
 const sideTheme = computed(() => settingsStore.sideTheme);
+// 背景颜色
+function isThemeBackground() {
+  const value = settingsStore.sideTheme;
+  switch (value) {
+    case 'theme-dark':
+      return variables.menuBackground;
+    case 'theme-light':
+      return variables.menuLightBackground;
+    case 'theme-red':
+      return variables.menuRedBackground;
+    default:
+      return variables.menuLightBackground;
+  }
+}
+// 图标颜色
+function isLogoTitleColor() {
+  const value = settingsStore.sideTheme;
+  switch (value) {
+    case 'theme-dark':
+      return variables.logoTitleColor;
+    case 'theme-light':
+      return variables.logoLightTitleColor;
+    case 'theme-red':
+      return variables.logoRedTitleColor;
+    default:
+      return variables.logoLightTitleColor;
+  }
+}
 </script>
 
 <style lang="scss" scoped>

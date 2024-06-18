@@ -1,12 +1,12 @@
 <template>
-  <div :class="{ 'has-logo': showLogo }" :style="{ backgroundColor: sideTheme === 'theme-dark' ? variables.menuBackground : variables.menuLightBackground }">
+  <div :class="{ 'has-logo': showLogo }" :style="{ backgroundColor: isThemeBackground() }">
     <logo v-if="showLogo" :collapse="isCollapse" />
     <el-scrollbar :class="sideTheme" wrap-class="scrollbar-wrapper">
       <el-menu
         :default-active="activeMenu"
         :collapse="isCollapse"
-        :background-color="sideTheme === 'theme-dark' ? variables.menuBackground : variables.menuLightBackground"
-        :text-color="sideTheme === 'theme-dark' ? variables.menuColor : variables.menuLightColor"
+        :background-color="isThemeBackground()"
+        :text-color="isThemeText()"
         :unique-opened="true"
         :active-text-color="theme"
         :collapse-transition="false"
@@ -50,5 +50,32 @@ const activeMenu = computed(() => {
   }
   return path;
 })
-
+// 背景颜色
+function isThemeBackground() {
+  const value = settingsStore.sideTheme;
+  switch (value) {
+    case 'theme-dark':
+      return variables.menuBackground;
+    case 'theme-light':
+      return variables.menuLightBackground;
+    case 'theme-red':
+      return variables.menuRedBackground;
+    default:
+      return variables.menuLightBackground;
+  }
+}
+// 文字颜色
+function isThemeText() {
+  const value = settingsStore.sideTheme;
+  switch (value) {
+    case 'theme-dark':
+      return variables.menuColor;
+    case 'theme-light':
+      return variables.menuLightColor;
+    case 'theme-red':
+      return variables.menuRedColor;
+    default:
+      return variables.menuLightColor;
+  }
+}
 </script>
