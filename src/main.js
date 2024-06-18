@@ -4,6 +4,7 @@ import Cookies from 'js-cookie'
 
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+// import 'element-plus/theme-chalk/dark/css-vars.css' // 自带深色模式，效果不好pass
 import locale from 'element-plus/es/locale/lang/zh-cn'
 
 import '@/assets/styles/index.scss' // global css
@@ -43,7 +44,8 @@ import ImagePreview from "@/components/ImagePreview"
 import TreeSelect from '@/components/TreeSelect'
 // 字典标签组件
 import DictTag from '@/components/DictTag'
-
+import useSettingsStore from '@/store/modules/settings'
+import { disable, enable, auto } from "darkreader"; // 插件暗夜模式
 const app = createApp(App)
 
 // 全局方法挂载
@@ -82,3 +84,12 @@ app.use(ElementPlus, {
 })
 
 app.mount('#app')
+// 调用暗夜模式
+if (useSettingsStore().dark) {
+  // toDark(true)
+  enable({
+    brightness: 100,
+    contrast: 90,
+    sepia: 10
+  });
+} else disable();
