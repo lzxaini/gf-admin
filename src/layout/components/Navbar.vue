@@ -1,6 +1,7 @@
 <template>
   <div class="navbar">
-    <hamburger id="hamburger-container" :is-active="appStore.sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
+    <hamburger id="hamburger-container" :is-active="appStore.sidebar.opened" class="hamburger-container"
+      @toggleClick="toggleSideBar" />
     <breadcrumb id="breadcrumb-container" class="breadcrumb-container" v-if="!settingsStore.topNav" />
     <top-nav id="topmenu-container" class="topmenu-container" v-if="settingsStore.topNav" />
 
@@ -8,13 +9,33 @@
       <template v-if="appStore.device !== 'mobile'">
         <header-search id="header-search" class="right-menu-item" />
 
-        <el-tooltip content="源码地址" effect="dark" placement="bottom">
-          <ruo-yi-git id="ruoyi-git" class="right-menu-item hover-effect" />
+        <el-tooltip content="深色模式" effect="dark" placement="bottom">
+          <!-- <ruo-yi-git id="ruoyi-git" class="right-menu-item hover-effect" /> -->
+          <!-- <el-switch v-model="isDark" inline-prompt active-text="dark" size="large" inactive-text="light"
+            @change="toggleDark" /> -->
+          <div class="switchNight">
+            <!-- <el-switch @change="changeTheme(darkVal)" v-model="darkVal" active-color="#16bbffbf" inactive-color="#595454">
+          </el-switch> -->
+            <div @click="changeTheme(!darkVal)" style="display: flex;justify-content: center;">
+              <svg v-if="!darkVal" t="1704270097678" class="sun_icon" viewBox="0 0 1024 1024" version="1.1"
+                xmlns="http://www.w3.org/2000/svg" p-id="8865" width="20" height="20">
+                <path
+                  d="M512 874.666667a32 32 0 0 1 32 32v64a32 32 0 0 1-64 0v-64A32 32 0 0 1 512 874.666667z m-256.426667-106.24a32 32 0 0 1 0 45.269333l-45.269333 45.248a32 32 0 0 1-45.248-45.226667l45.226667-45.269333a32 32 0 0 1 45.269333 0z m558.122667 0l45.248 45.269333a32 32 0 0 1-45.226667 45.248l-45.269333-45.226667a32 32 0 1 1 45.248-45.269333zM512 213.333333c164.949333 0 298.666667 133.717333 298.666667 298.666667s-133.717333 298.666667-298.666667 298.666667-298.666667-133.717333-298.666667-298.666667 133.717333-298.666667 298.666667-298.666667zM117.333333 480a32 32 0 0 1 0 64h-64a32 32 0 0 1 0-64h64z m853.333334 0a32 32 0 0 1 0 64h-64a32 32 0 0 1 0-64h64zM210.304 165.056l45.248 45.226667a32 32 0 1 1-45.248 45.269333L165.056 210.304a32 32 0 0 1 45.226667-45.248z m648.64 0a32 32 0 0 1 0 45.226667l-45.226667 45.269333a32 32 0 1 1-45.269333-45.248l45.248-45.248a32 32 0 0 1 45.248 0zM512 21.333333a32 32 0 0 1 32 32v64a32 32 0 0 1-64 0v-64A32 32 0 0 1 512 21.333333z"
+                  fill="#ff9900" p-id="8866"></path>
+              </svg>
+              <svg v-else t="1704270196388" class="night_icon" viewBox="0 0 1024 1024" version="1.1"
+                xmlns="http://www.w3.org/2000/svg" p-id="11733" width="20" height="20">
+                <path
+                  d="M463.90303 938.666667c-114.812121 0-221.866667-44.993939-302.545454-127.224243l-27.927273-27.927272 38.787879-10.860607c164.460606-44.993939 279.272727-195.490909 279.272727-366.157575 0-100.848485-38.787879-195.490909-108.606061-266.860606l-27.927272-27.927273 38.787879-10.860606c37.236364-9.309091 74.472727-15.515152 111.70909-15.515152 234.278788 0 426.666667 190.836364 426.666667 426.666667S699.733333 938.666667 463.90303 938.666667z"
+                  fill="#2c2c2c" p-id="11734"></path>
+              </svg>
+            </div>
+          </div>
         </el-tooltip>
 
-        <el-tooltip content="文档地址" effect="dark" placement="bottom">
+        <!-- <el-tooltip content="文档地址" effect="dark" placement="bottom">
           <ruo-yi-doc id="ruoyi-doc" class="right-menu-item hover-effect" />
-        </el-tooltip>
+        </el-tooltip> -->
 
         <screenfull id="screenfull" class="right-menu-item hover-effect" />
 
@@ -48,6 +69,7 @@
 </template>
 
 <script setup>
+import { useDark, useToggle } from '@vueuse/core'
 import { ElMessageBox } from 'element-plus'
 import Breadcrumb from '@/components/Breadcrumb'
 import TopNav from '@/components/TopNav'
@@ -60,11 +82,17 @@ import RuoYiDoc from '@/components/RuoYi/Doc'
 import useAppStore from '@/store/modules/app'
 import useUserStore from '@/store/modules/user'
 import useSettingsStore from '@/store/modules/settings'
+import saveSettingFun from './Settings/saveSetting'
+import { ref } from 'vue'
+import { disable, enable, auto } from "darkreader"; // 插件暗夜模式
 
+const { proxy } = getCurrentInstance();
 const appStore = useAppStore()
 const userStore = useUserStore()
 const settingsStore = useSettingsStore()
-
+const darkVal = ref(settingsStore.dark)
+const isDark = useDark()
+const toggleDark = useToggle(isDark) // 暗夜模式
 function toggleSideBar() {
   appStore.toggleSideBar()
 }
@@ -97,6 +125,21 @@ function logout() {
 const emits = defineEmits(['setLayout'])
 function setLayout() {
   emits('setLayout');
+}
+
+// 深色模式
+function changeTheme(val) {
+  darkVal.value = val
+  settingsStore.dark = val
+  // 调用暗夜模式
+  if (val) {
+    enable({
+      brightness: 100,
+      contrast: 90,
+      sepia: 10
+    });
+  } else disable();
+  saveSettingFun(proxy.$modal, settingsStore)
 }
 </script>
 
@@ -140,6 +183,46 @@ function setLayout() {
     height: 100%;
     line-height: 50px;
     display: flex;
+
+    .switchNight {
+      display: flex;
+      align-items: center;
+      float: left;
+      padding: 0 8px;
+      height: 100%;
+
+      .sun_icon {
+        animation: sun_icon_is_show 0.8s ease;
+      }
+
+      .night_icon {
+        animation: night_icon_is_show 0.8s ease;
+      }
+
+      @keyframes sun_icon_is_show {
+        0% {
+          width: 1px;
+          height: 1px;
+        }
+
+        100% {
+          width: 20px;
+          height: 20px;
+        }
+      }
+
+      @keyframes night_icon_is_show {
+        0% {
+          width: 1px;
+          height: 1px;
+        }
+
+        100% {
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
 
     &:focus {
       outline: none;
