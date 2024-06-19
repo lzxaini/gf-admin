@@ -9,6 +9,12 @@
 	<a href="https://gitee.com/y_project/RuoYi-Vue/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
 </p>
 
+## 改造备注
+
+* 2024-06-19改造新增深色模式
+* 2024-06-19改造主题支持扩展
+* 2024-06-19改造支持国际化已引入中、繁和英三种语言
+
 ## 平台简介
 
 * 本仓库为前端技术栈 [Vue3](https://v3.cn.vuejs.org) + [Element Plus](https://element-plus.org/zh-CN) + [Vite](https://cn.vitejs.dev) 版本。
