@@ -5,7 +5,7 @@ import Cookies from 'js-cookie'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 // import 'element-plus/theme-chalk/dark/css-vars.css' // 自带深色模式，效果不好pass
-import locale from 'element-plus/es/locale/lang/zh-cn'
+// import locale from 'element-plus/es/locale/lang/zh-cn'
 
 import '@/assets/styles/index.scss' // global css
 
@@ -13,7 +13,7 @@ import App from './App'
 import store from './store'
 import router from './router'
 import directive from './directive' // directive
-
+import useSettingsStore from '@/store/modules/settings'
 // 注册指令
 import plugins from './plugins' // plugins
 import { download } from '@/utils/request'
@@ -44,8 +44,10 @@ import ImagePreview from "@/components/ImagePreview"
 import TreeSelect from '@/components/TreeSelect'
 // 字典标签组件
 import DictTag from '@/components/DictTag'
-import useSettingsStore from '@/store/modules/settings'
-import { disable, enable, auto } from "darkreader"; // 插件暗夜模式
+// 插件暗夜模式
+import { disable, enable, auto } from "darkreader";
+// 多语言
+import { vueI18n, switchLanguages } from './language/index';
 const app = createApp(App)
 
 // 全局方法挂载
@@ -72,24 +74,22 @@ app.use(router)
 app.use(store)
 app.use(plugins)
 app.use(elementIcons)
+app.use(vueI18n(useSettingsStore().lang)); // 多语言加载
 app.component('svg-icon', SvgIcon)
-
 directive(app)
-
 // 使用element-plus 并且设置全局的大小
 app.use(ElementPlus, {
-  locale: locale,
+  // locale: locale,
+  locale: switchLanguages(useSettingsStore().lang),
   // 支持 large、default、small
   size: Cookies.get('size') || 'default'
 })
-
-app.mount('#app')
 // 调用暗夜模式
 if (useSettingsStore().dark) {
-  // toDark(true)
   enable({
     brightness: 100,
     contrast: 90,
     sepia: 10
   });
 } else disable();
+app.mount('#app')
