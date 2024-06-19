@@ -9,7 +9,7 @@
       <template v-if="appStore.device !== 'mobile'">
         <header-search id="header-search" class="right-menu-item" />
 
-        <el-tooltip content="深色模式" effect="dark" placement="bottom">
+        <el-tooltip :content="$t(`navbar.darkMode`)" effect="dark" placement="bottom">
           <!-- <ruo-yi-git id="ruoyi-git" class="right-menu-item hover-effect" /> -->
           <!-- <el-switch v-model="isDark" inline-prompt active-text="dark" size="large" inactive-text="light"
             @change="toggleDark" /> -->
@@ -39,8 +39,11 @@
 
         <screenfull id="screenfull" class="right-menu-item hover-effect" />
 
-        <el-tooltip content="布局大小" effect="dark" placement="bottom">
+        <el-tooltip :content="$t(`navbar.layoutSize`)" effect="dark" placement="bottom">
           <size-select id="size-select" class="right-menu-item hover-effect" />
+        </el-tooltip>
+        <el-tooltip :content="$t(`navbar.language`)" effect="dark" placement="bottom">
+          <lang-select id="lang-select" class="right-menu-item hover-effect" />
         </el-tooltip>
       </template>
       <div class="avatar-container">
@@ -76,6 +79,7 @@ import TopNav from '@/components/TopNav'
 import Hamburger from '@/components/Hamburger'
 import Screenfull from '@/components/Screenfull'
 import SizeSelect from '@/components/SizeSelect'
+import LangSelect from '@/components/LangSelect'
 import HeaderSearch from '@/components/HeaderSearch'
 import RuoYiGit from '@/components/RuoYi/Git'
 import RuoYiDoc from '@/components/RuoYi/Doc'
