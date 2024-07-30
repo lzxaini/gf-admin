@@ -45,6 +45,10 @@ export default {
    */
   errorLog: 'production',
   /**
+   * 深色模式
+   */
+  dark: false,
+  /**
    * 语言
    */
   lang: 'zhCn'
