@@ -16,9 +16,12 @@
 </template>
 
 <script setup>
-import { useMQTTStore } from '@/store/modules/useMQTTStore'
-const mqttStore = useMQTTStore()
-mqttStore.connect();
+// import { useMQTTStore } from '@/store/modules/useMQTTStore'
+// const mqttStore = useMQTTStore()
+// mqttStore.connect();
+// import { useSocketStore } from '@/store/modules/useSocketStore'
+// const socketStore = useSocketStore()
+// socketStore.initWebSocket();
 import { useWindowSize } from '@vueuse/core'
 import Sidebar from './components/Sidebar/index.vue'
 import { AppMain, Navbar, Settings, TagsView } from './components'
