@@ -265,7 +265,7 @@
                </el-col>
                <el-col :span="12">
                   <el-form-item label="角色">
-                     <el-select v-model="form.roleIds" multiple placeholder="请选择">
+                     <el-select v-model="form.roleIds[0]" placeholder="请选择">
                         <el-option
                            v-for="item in roleOptions"
                            :key="item.roleId"
