@@ -1,19 +1,8 @@
 <template>
   <div class="upload-file">
-    <el-upload
-      multiple
-      :action="uploadFileUrl"
-      :before-upload="handleBeforeUpload"
-      :file-list="fileList"
-      :limit="limit"
-      :on-error="handleUploadError"
-      :on-exceed="handleExceed"
-      :on-success="handleUploadSuccess"
-      :show-file-list="false"
-      :headers="headers"
-      class="upload-file-uploader"
-      ref="fileUpload"
-    >
+    <el-upload multiple :action="baseUrl + uploadUrl" :before-upload="handleBeforeUpload" :file-list="fileList"
+      :limit="limit" :on-error="handleUploadError" :on-exceed="handleExceed" :on-success="handleUploadSuccess"
+      :show-file-list="false" :headers="headers" :drag="drag" class="upload-file-uploader" ref="fileUpload">
       <!-- 上传按钮 -->
       <el-button type="primary">选取文件</el-button>
     </el-upload>
@@ -62,7 +51,15 @@ const props = defineProps({
   isShowTip: {
     type: Boolean,
     default: true
-  }
+  },
+  drag: {
+    type: Boolean,
+    default: false
+  },
+  uploadUrl: {
+    type: String,
+    default: "/common/upload"
+  },
 });
 
 const { proxy } = getCurrentInstance();
@@ -70,7 +67,7 @@ const emit = defineEmits();
 const number = ref(0);
 const uploadList = ref([]);
 const baseUrl = import.meta.env.VITE_APP_BASE_API;
-const uploadFileUrl = ref(import.meta.env.VITE_APP_BASE_API + "/common/upload"); // 上传文件服务器地址
+// const uploadFileUrl = ref(); // 上传文件服务器地址
 const headers = ref({ Authorization: "Bearer " + getToken() });
 const fileList = ref([]);
 const showTip = computed(
@@ -94,7 +91,7 @@ watch(() => props.modelValue, val => {
     fileList.value = [];
     return [];
   }
-},{ deep: true, immediate: true });
+}, { deep: true, immediate: true });
 
 // 上传前校检格式和大小
 function handleBeforeUpload(file) {
@@ -128,20 +125,28 @@ function handleExceed() {
 
 // 上传失败
 function handleUploadError(err) {
+  console.log("🥵 ~ handleUploadError ~ err: ", err)
   proxy.$modal.msgError("上传文件失败");
+  proxy.$modal.closeLoading();
 }
 
 // 上传成功回调
 function handleUploadSuccess(res, file) {
-  if (res.code === 200) {
+  if (res.code === 200 && props.uploadUrl !== '/gf/device/import') {
     uploadList.value.push({ name: res.fileName, url: res.fileName });
+    uploadedSuccessfully();
+  } else if (props.uploadUrl !== '/gf/device/import') {
+    number.value--;
+    proxy.$modal.closeLoading();
+    proxy.$modal.msgError(res.msg)
+    proxy.$refs.fileUpload.handleRemove(file);
     uploadedSuccessfully();
   } else {
     number.value--;
     proxy.$modal.closeLoading();
-    proxy.$modal.msgError(res.msg);
     proxy.$refs.fileUpload.handleRemove(file);
     uploadedSuccessfully();
+    emit("updateSuccess", res);
   }
 }
 
@@ -189,18 +194,21 @@ function listToString(list, separator) {
 .upload-file-uploader {
   margin-bottom: 5px;
 }
+
 .upload-file-list .el-upload-list__item {
   border: 1px solid #e4e7ed;
   line-height: 2;
   margin-bottom: 10px;
   position: relative;
 }
+
 .upload-file-list .ele-upload-list__item-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
   color: inherit;
 }
+
 .ele-upload-list__item-content-action .el-link {
   margin-right: 10px;
 }
