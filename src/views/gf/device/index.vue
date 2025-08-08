@@ -2,116 +2,104 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-08-04 13:27:29
+ * @LastEditTime: 2025-08-08 17:12:37
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
 -->
 <template>
 	<div class="app-container">
-		<el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
-			<el-form-item label="设备名称" prop="deviceName">
-				<el-input v-model="queryParams.deviceName" placeholder="请输入设备名称" clearable @keyup.enter="handleQuery" />
-			</el-form-item>
-			<el-form-item label="设备识别号" prop="serialNumber">
-				<el-input v-model="queryParams.serialNumber" placeholder="请输入设备识别号" clearable @keyup.enter="handleQuery" />
-			</el-form-item>
-			<el-form-item label="状态" prop="status">
-				<el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 200px;">
-					<el-option v-for="dict in iot_device_status" :key="dict.value" :label="dict.label" :value="dict.value" />
-				</el-select>
-			</el-form-item>
-			<!-- <el-form-item label="是否启用" prop="enable">
-				<el-select v-model="queryParams.enable" placeholder="请选择是否启用" clearable>
-					<el-option v-for="dict in iot_is_enable" :key="dict.value" :label="dict.label" :value="dict.value" />
-				</el-select>
-			</el-form-item> -->
-			<el-form-item>
-				<el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-				<el-button icon="Refresh" @click="resetQuery">重置</el-button>
-			</el-form-item>
-		</el-form>
-
-		<el-row :gutter="10" class="mb8">
-			<el-col :span="1.5">
-				<el-button type="primary" plain icon="Plus" @click="handleAdd" v-hasPermi="['iot:device:add']">新增</el-button>
-			</el-col>
-			<el-col :span="1.5">
-				<el-button type="success" plain icon="Edit" :disabled="single" @click="handleUpdate" v-hasPermi="['iot:device:edit']">修改</el-button>
-			</el-col>
-			<el-col :span="1.5">
-				<el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete" v-hasPermi="['iot:device:remove']">删除</el-button>
-			</el-col>
-			<el-col :span="1.5">
-				<el-button type="warning" plain icon="Download" @click="handleExport" v-hasPermi="['iot:device:export']">导出</el-button>
-			</el-col>
-			<right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
-		</el-row>
-
-		<el-table v-loading="loading" :data="deviceList" @selection-change="handleSelectionChange">
-			<el-table-column type="selection" width="55" align="center" />
-			<!-- <el-table-column label="设备id" align="center" prop="id" /> -->
-			<el-table-column label="设备名称" align="center" prop="deviceName" />
-			<el-table-column label="设备识别号" align="center" prop="serialNumber" />
-			<el-table-column label="图片地址" align="center" prop="imageUrl" />
-			<el-table-column label="状态" align="center" prop="status">
-				<template #default="scope">
-					<dict-tag :options="iot_device_status" :value="scope.row.status" />
-				</template>
-			</el-table-column>
-			<el-table-column label="激活时间" align="center" prop="activeTime" width="180">
-				<template #default="scope">
-					<span>{{ parseTime(scope.row.activeTime, '{y}-{m}-{d}') }}</span>
-				</template>
-			</el-table-column>
-			<el-table-column label="最后一次上报时间" align="center" prop="lastReportTime" width="180">
-				<template #default="scope">
-					<span>{{ parseTime(scope.row.lastReportTime, '{y}-{m}-{d}') }}</span>
-				</template>
-			</el-table-column>
-			<!-- <el-table-column label="是否启用" align="center" prop="enable">
-				<template #default="scope">
-          {{iot_is_enable}}
-					<dict-tag :options="iot_is_enable" :value="scope.row.enable" />
-				</template>
-			</el-table-column> -->
-			<!-- <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-				<template #default="scope">
-					<el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['iot:device:edit']">修改</el-button>
-					<el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['iot:device:remove']">删除</el-button>
-				</template>
-			</el-table-column> -->
-		</el-table>
-
-		<pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
-
-		<!-- 添加或修改设备管理对话框 -->
-		<el-dialog :title="title" v-model="open" width="30%" append-to-body>
-			<el-form ref="deviceRef" :model="form" :rules="rules" label-width="120px">
-				<el-form-item label="设备名称" prop="deviceName">
-					<el-input v-model="form.deviceName" placeholder="请输入设备名称" />
-				</el-form-item>
+		<el-card>
+			<el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="100px">
 				<el-form-item label="设备识别号" prop="serialNumber">
-					<el-input v-model="form.serialNumber" placeholder="请输入设备识别号" :disabled="true" />
+					<el-input v-model="queryParams.serialNumber" placeholder="请输入设备识别号" clearable @keyup.enter="handleQuery" />
 				</el-form-item>
-				<el-form-item label="设备地址" prop="networkAddress">
-					<el-input v-model="form.networkAddress" placeholder="请输入设备地址" />
-				</el-form-item>
-				<el-form-item label="状态" prop="status">
-					<el-select v-model="form.status" placeholder="请选择状态">
-						<el-option v-for="dict in iot_device_status" :key="dict.value" :label="dict.label" :value="dict.value"></el-option>
+				<el-form-item label="运行状态" prop="runningState">
+					<el-select v-model="queryParams.runningState" placeholder="请选择运行状态" clearable style="width: 200px;">
+						<el-option v-for="dict in gf_running_state" :key="dict.value" :label="dict.label" :value="dict.value" />
 					</el-select>
 				</el-form-item>
-				<el-form-item label="激活时间" prop="activeTime">
-					<el-date-picker clearable v-model="form.activeTime" type="date" value-format="YYYY-MM-DD" placeholder="请选择激活时间"> </el-date-picker>
+				<el-form-item>
+					<el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+					<el-button icon="Refresh" @click="resetQuery">重置</el-button>
 				</el-form-item>
-				<el-form-item label="是否启用" prop="enable">
-					<el-select v-model="form.enable" placeholder="请选择是否启用">
-						<el-option v-for="dict in iot_is_enable" :key="dict.value" :label="dict.label" :value="dict.value"></el-option>
-					</el-select>
+
+				<el-form-item style="float: right;">
+					<el-row :gutter="20" class="mb8">
+						<el-col :span="1.5">
+							<el-button type="primary" plain icon="Plus" @click="importDevice"
+								v-hasPermi="['gf:device:add']">导入设备</el-button>
+						</el-col>
+						<el-col :span="1.5">
+							<el-button type="warning" plain icon="Download" @click="handleExport"
+								v-hasPermi="['gf:device:export']">导出</el-button>
+						</el-col>
+						<right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
+					</el-row>
 				</el-form-item>
-				<el-form-item label="备注" prop="remark">
-					<el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+			</el-form>
+		</el-card>
+		<el-card style="margin-top: 20px;">
+			<el-row :gutter="30" v-loading="loading">
+				<el-col :xs="24" :sm="12" :md="12" :lg="8" :xl="6" v-for="(item, index) in deviceList" :key="index"
+					style="margin-bottom:30px;text-align:center;">
+					<el-card shadow="always">
+						<el-row type="flex" :gutter="10" justify="space-between">
+							<el-col :span="20" style="text-align:left;">
+								<svg-icon icon-class="device" />
+								{{ item.deptId != 0 ? item.deptName : '尚未绑定' }}
+							</el-col>
+							<el-col :span="4">
+								<div style="font-size:28px;color:#ccc;">
+									<svg-icon v-if="item.device.status == 2" icon-class="wifi_4" />
+									<svg-icon v-else icon-class="wifi_0" />
+								</div>
+							</el-col>
+						</el-row>
+						<el-row :gutter="10">
+							<el-col :span="15">
+								<el-descriptions :column="1" size="mini" style="white-space:nowrap;">
+									<el-descriptions-item label="设备名称">
+										{{ item.device.deviceName }}
+									</el-descriptions-item>
+									<el-descriptions-item label="设备编号">
+										{{ item.serialNumber }}
+									</el-descriptions-item>
+									<el-descriptions-item label="设备状态">
+										<dict-tag :options="gf_running_state" :value="item.runningState" style="display:inline-block;" />
+									</el-descriptions-item>
+									<el-descriptions-item label="激活时间">
+										<!-- {{ parseTime(item.createTime, '{y}-{m}-{d}') }} -->
+										{{ item.createTime }}
+									</el-descriptions-item>
+								</el-descriptions>
+							</el-col>
+							<el-col :span="9">
+								<el-image class="device_image" :src="deviceImg" fit="cover"></el-image>
+							</el-col>
+						</el-row>
+						<el-button-group>
+							<el-button type="primary" size="mini" icon="edit" @click="handleUpdate(item)"
+								v-hasPermi="['gf:device:edit']">绑定</el-button>
+							<el-button :disabled="item.runningState == 0" type="warning" size="mini" icon="delete"
+								@click="handleBind(item)" v-hasPermi="['gf:device:remove']">解绑</el-button>
+						</el-button-group>
+					</el-card>
+				</el-col>
+			</el-row>
+			<el-empty description="暂无数据，请添加设备" v-if="total == 0"></el-empty>
+		</el-card>
+
+		<pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum"
+			v-model:limit="queryParams.pageSize" :pageSizes="[12, 24, 36, 60]" @pagination="getList" />
+
+		<!-- 添加或修改GF设备管理对话框 -->
+		<el-dialog :title="title" v-model="open" width="20%" append-to-body>
+			<el-form ref="deviceRef" :model="form" :rules="rules" label-width="80px">
+				<el-form-item label="绑定部门" prop="deptId">
+					<el-tree-select v-model="form.deptId" :data="deptOptions"
+						:props="{ value: 'id', label: 'label', children: 'children' }" value-key="id" placeholder="请选择归属部门"
+						check-strictly />
 				</el-form-item>
 			</el-form>
 			<template #footer>
@@ -121,43 +109,71 @@
 				</div>
 			</template>
 		</el-dialog>
+		<el-dialog class="align-center-dialog" :title="title" v-model="open" width="20%" append-to-body align-center>
+			<el-form ref="deviceRef" :model="form" :rules="rules" label-width="80px">
+				<el-form-item label="绑定部门" prop="deptId">
+					<el-tree-select v-model="form.deptId" :data="deptOptions"
+						:props="{ value: 'id', label: 'label', children: 'children' }" value-key="id" placeholder="请选择归属部门"
+						check-strictly />
+				</el-form-item>
+			</el-form>
+			<template #footer>
+				<div class="dialog-footer">
+					<el-button type="primary" @click="submitForm">确 定</el-button>
+					<el-button @click="cancel">取 消</el-button>
+				</div>
+			</template>
+		</el-dialog>
+		<el-dialog class="align-center-dialog" title="导入设备" v-model="importDialog" width="20%" append-to-body align-center>
+			<fileUpload ref="file-upload" :value="filePath" :limit="1" :fileSize="3" :drag="true"
+				:uploadUrl="'/gf/device/import'" :fileType='["xls", "xlsx"]' @updateSuccess="updateSuccess"></fileUpload>
+			<template #footer>
+				<div class="dialog-footer">
+					<el-button @click="closeImportDevice">取 消</el-button>
+				</div>
+			</template>
+		</el-dialog>
 	</div>
 </template>
 
 <script setup name="Device">
-import { listDevice, getDevice, delDevice, addDevice, updateDevice } from '@/api/gf/device';
+import { listDevice, getDevice, delDevice, addDevice, updateDevice } from "@/api/gf/device";
+import { deptTreeSelect } from "@/api/system/user";
+import deviceImg from '@/assets/images/device.png';
 
 const { proxy } = getCurrentInstance();
-const { iot_location_mode, iot_device_status, iot_is_enable } = proxy.useDict('iot_location_mode', 'iot_device_status', 'iot_is_enable');
+const { gf_running_state } = proxy.useDict("gf_running_state");
 
 const deviceList = ref([]);
 const open = ref(false);
+const importDialog = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
-const ids = ref([]);
-const single = ref(true);
-const multiple = ref(true);
 const total = ref(0);
-const title = ref('');
+const title = ref("");
+const deptOptions = ref(undefined);
 
 const data = reactive({
 	form: {},
 	queryParams: {
 		pageNum: 1,
-		pageSize: 10,
-		deviceName: null,
+		pageSize: 12,
 		serialNumber: null,
-		status: null,
-		enable: null,
+		runningState: null,
 	},
 	rules: {
-		enable: [{ required: true, message: '是否启用不能为空', trigger: 'change' }],
-	},
+		deviceId: [
+			{ required: true, message: "设备id不能为空", trigger: "blur" }
+		],
+		serialNumber: [
+			{ required: true, message: "设备识别号不能为空", trigger: "blur" }
+		],
+	}
 });
 
 const { queryParams, form, rules } = toRefs(data);
 
-/** 查询设备管理列表 */
+/** 查询GF设备管理列表 */
 function getList() {
 	loading.value = true;
 	listDevice(queryParams.value).then(response => {
@@ -177,39 +193,22 @@ function cancel() {
 function reset() {
 	form.value = {
 		id: null,
-		productId: null,
-		productName: null,
-		userId: null,
-		areaId: null,
-		deviceName: null,
+		deviceId: null,
 		serialNumber: null,
-		parentDeviceId: null,
-		parentSerialNumber: null,
-		imageUrl: null,
-		version: null,
-		rssi: null,
-		locationMode: null,
-		networkIp: null,
-		networkAddress: null,
-		longitude: null,
-		latitude: null,
-		status: null,
-		activeTime: null,
-		lastReportTime: null,
-		alertId: null,
-		alertName: null,
-		alertLevel: null,
-		enable: null,
+		deptId: null,
+		teamId: null,
+		runningState: null,
+		service: null,
+		remainingTime: null,
 		remark: null,
 		tenantId: null,
 		createBy: null,
 		createTime: null,
 		updateBy: null,
 		updateTime: null,
-		deleteTime: null,
-		delFlag: null,
+		delFlag: null
 	};
-	proxy.resetForm('deviceRef');
+	proxy.resetForm("deviceRef");
 }
 
 /** 搜索按钮操作 */
@@ -220,48 +219,51 @@ function handleQuery() {
 
 /** 重置按钮操作 */
 function resetQuery() {
-	proxy.resetForm('queryRef');
+	proxy.resetForm("queryRef");
 	handleQuery();
 }
 
-// 多选框选中数据
-function handleSelectionChange(selection) {
-	ids.value = selection.map(item => item.id);
-	single.value = selection.length != 1;
-	multiple.value = !selection.length;
+/** 导入文件按钮操作 */
+function importDevice() {
+	importDialog.value = true
 }
 
-/** 新增按钮操作 */
-function handleAdd() {
-	reset();
-	open.value = true;
-	title.value = '添加设备管理';
+/** 导入文件按钮操作 */
+function closeImportDevice() {
+	importDialog.value = false
 }
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
 	reset();
-	const _id = row.id || ids.value;
+	const _id = row.id
 	getDevice(_id).then(response => {
 		form.value = response.data;
 		open.value = true;
-		title.value = '修改设备管理';
+		title.value = "修改设备";
 	});
 }
 
 /** 提交按钮 */
 function submitForm() {
-	proxy.$refs['deviceRef'].validate(valid => {
+	proxy.$refs["deviceRef"].validate(valid => {
 		if (valid) {
+			if (form.value.deptId == 0) {
+				return proxy.$modal.msgWarning("请选择绑定部门！");
+			}
 			if (form.value.id != null) {
-				updateDevice(form.value).then(response => {
-					proxy.$modal.msgSuccess('修改成功');
+				let params = {
+					...form.value,
+					runningState: 1
+				}
+				updateDevice(params).then(response => {
+					proxy.$modal.msgSuccess("修改成功");
 					open.value = false;
 					getList();
 				});
 			} else {
 				addDevice(form.value).then(response => {
-					proxy.$modal.msgSuccess('新增成功');
+					proxy.$modal.msgSuccess("新增成功");
 					open.value = false;
 					getList();
 				});
@@ -271,30 +273,53 @@ function submitForm() {
 }
 
 /** 删除按钮操作 */
-function handleDelete(row) {
-	const _ids = row.id || ids.value;
-	proxy.$modal
-		.confirm('是否确认删除设备管理编号为"' + _ids + '"的数据项？')
-		.then(function () {
-			return delDevice(_ids);
-		})
-		.then(() => {
+function handleBind(row) {
+	proxy.$modal.confirm('是否确认解绑设备编号为"' + row.serialNumber + '"的数据项？').then(function () {
+		let params = {
+			...row,
+			deptId: 0,
+			runningState: 0,
+			teamId: 0
+		}
+		updateDevice(params).then(response => {
+			proxy.$modal.msgSuccess("修改成功");
 			getList();
-			proxy.$modal.msgSuccess('删除成功');
-		})
-		.catch(() => {});
+		});
+	}).then(() => {
+	}).catch(() => { });
 }
 
 /** 导出按钮操作 */
 function handleExport() {
-	proxy.download(
-		'iot/device/export',
-		{
-			...queryParams.value,
-		},
-		`device_${new Date().getTime()}.xlsx`
-	);
+	proxy.download('gf/device/export', {
+		...queryParams.value
+	}, `device_${new Date().getTime()}.xlsx`)
+}
+/** 查询部门下拉树结构 */
+function getDeptTree() {
+	deptTreeSelect().then(response => {
+		deptOptions.value = response.data;
+	});
+};
+/** 上传成功 */
+function updateSuccess(res) {
+	if (res.code === 200) {
+		proxy.$modal.msgSuccess("导入成功！");
+		importDialog.value = false;
+		getList();
+	} else {
+		proxy.$modal.msgError(res.msg || "导入失败！");
+	}
+}
+getList();
+getDeptTree()
+</script>
+<style lang="scss" scoped>
+.device_image {
+	width: 150px;
 }
 
-getList();
-</script>
+.align-center-dialog {
+	margin-top: auto !important;
+}
+</style>
