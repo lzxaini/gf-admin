@@ -11,7 +11,8 @@ const useUserStore = defineStore(
       name: '',
       avatar: '',
       roles: [],
-      permissions: []
+      permissions: [],
+      userInfo: {}
     }),
     actions: {
       // 登录
@@ -46,6 +47,7 @@ const useUserStore = defineStore(
             this.id = user.userId
             this.name = user.userName
             this.avatar = avatar
+            this.userInfo = user;
             resolve(res)
           }).catch(error => {
             reject(error)

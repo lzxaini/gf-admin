@@ -56,5 +56,10 @@ export default {
     return roles.every(item => {
       return authRole(item)
     })
+  },
+  // 获取用户id
+  getUserInfo() {
+    console.log('useUserStore ', useUserStore())
+    return useUserStore().userInfo
   }
 }
