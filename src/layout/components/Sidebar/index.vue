@@ -60,6 +60,8 @@ function isThemeBackground() {
       return variables.menuLightBackground;
     case 'theme-red':
       return variables.menuRedBackground;
+    case 'theme-purple':
+      return variables.menuPurpleBackground;
     default:
       return variables.menuLightBackground;
   }
@@ -74,6 +76,8 @@ function isThemeText() {
       return variables.menuLightColor;
     case 'theme-red':
       return variables.menuRedColor;
+    case 'theme-purple':
+      return variables.menuPurpleColor;
     default:
       return variables.menuLightColor;
   }

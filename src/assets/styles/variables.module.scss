@@ -24,6 +24,11 @@ $base-sub-menu-hover: #001528;
 $base-menu-red-color: #fff;
 $base-menu-red-background: #bd1a2d;
 $base-logo-red-title-color: #fff;
+// 紫色
+$base-menu-purple-color: #fff;
+// $base-menu-purple-background: #888BF4;
+$base-menu-purple-background: #5151C6;
+$base-logo-purple-title-color: #fff;
 // 自定义暗色菜单风格
 /**
 $base-menu-color:hsla(0,0%,100%,.65);
@@ -69,4 +74,8 @@ $base-sidebar-width: 200px;
 	menuRedColor: $base-menu-red-color;
 	menuRedBackground: $base-menu-red-background;
 	logoRedTitleColor: $base-logo-red-title-color;
+	// 紫色
+	menuPurpleColor: $base-menu-purple-color;
+	menuPurpleBackground: $base-menu-purple-background;
+	logoPurpleTitleColor: $base-logo-purple-title-color;
 }

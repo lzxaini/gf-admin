@@ -38,6 +38,8 @@ function isThemeBackground() {
       return variables.menuLightBackground;
     case 'theme-red':
       return variables.menuRedBackground;
+    case 'theme-purple':
+      return variables.menuPurpleBackground;
     default:
       return variables.menuLightBackground;
   }
@@ -52,6 +54,8 @@ function isLogoTitleColor() {
       return variables.logoLightTitleColor;
     case 'theme-red':
       return variables.logoRedTitleColor;
+    case 'theme-purple':
+      return variables.logoPurpleTitleColor;
     default:
       return variables.logoLightTitleColor;
   }
