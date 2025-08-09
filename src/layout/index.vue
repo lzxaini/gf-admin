@@ -62,7 +62,7 @@ const state = reactive({
 const watermarkSwitch = () => {
   if (import.meta.env.VITE_APP_SYSTEM_WATERMARK === 'true') {
     console.log('proxy?.$auth.getUserInfo()', proxy?.$auth.getUserInfo())
-    state.watermarkContetent = ['光馥科美', proxy?.$auth.getUserInfo().nickName, getNowTimes()];
+    state.watermarkContetent = ['光馥科美', proxy?.$auth.getUserInfo().userName, getNowTimes()];
     state.timer = setInterval(() => {
       // 实时时间获取
       state.watermarkContetent[2] = getNowTimes();
