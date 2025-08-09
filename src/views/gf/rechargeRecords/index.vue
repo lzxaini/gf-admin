@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-08 17:48:56
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-08-08 17:58:14
+ * @LastEditTime: 2025-08-09 10:48:07
  * @FilePath: \ryv3\src\views\gf\rechargeRecords\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -32,6 +32,7 @@
       <el-table-column label="上期结余" align="center" prop="previousBalance" />
       <el-table-column label="当前结余" align="center" prop="currentBalance" />
       <el-table-column label="本次充值" align="center" prop="rechargeAmount" />
+      <el-table-column label="充值操作人" align="center" prop="authorizerName" />
       <el-table-column label="充值时间" align="center" prop="createTime" width="180">
         <template #default="scope">
           <span>{{ scope.row.createTime }}</span>
