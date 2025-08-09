@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-08-08 17:12:37
+ * @LastEditTime: 2025-08-09 10:23:40
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -94,7 +94,8 @@
 			v-model:limit="queryParams.pageSize" :pageSizes="[12, 24, 36, 60]" @pagination="getList" />
 
 		<!-- 添加或修改GF设备管理对话框 -->
-		<el-dialog :title="title" v-model="open" width="20%" append-to-body>
+		<el-dialog :title="title" v-model="open" width="20%" append-to-body align-center
+			style="margin-top: auto !important;">
 			<el-form ref="deviceRef" :model="form" :rules="rules" label-width="80px">
 				<el-form-item label="绑定部门" prop="deptId">
 					<el-tree-select v-model="form.deptId" :data="deptOptions"
@@ -109,22 +110,8 @@
 				</div>
 			</template>
 		</el-dialog>
-		<el-dialog class="align-center-dialog" :title="title" v-model="open" width="20%" append-to-body align-center>
-			<el-form ref="deviceRef" :model="form" :rules="rules" label-width="80px">
-				<el-form-item label="绑定部门" prop="deptId">
-					<el-tree-select v-model="form.deptId" :data="deptOptions"
-						:props="{ value: 'id', label: 'label', children: 'children' }" value-key="id" placeholder="请选择归属部门"
-						check-strictly />
-				</el-form-item>
-			</el-form>
-			<template #footer>
-				<div class="dialog-footer">
-					<el-button type="primary" @click="submitForm">确 定</el-button>
-					<el-button @click="cancel">取 消</el-button>
-				</div>
-			</template>
-		</el-dialog>
-		<el-dialog class="align-center-dialog" title="导入设备" v-model="importDialog" width="20%" append-to-body align-center>
+		<el-dialog title="导入设备" v-model="importDialog" width="20%" append-to-body align-center
+			style="margin-top: auto !important;">
 			<fileUpload ref="file-upload" :value="filePath" :limit="1" :fileSize="3" :drag="true"
 				:uploadUrl="'/gf/device/import'" :fileType='["xls", "xlsx"]' @updateSuccess="updateSuccess"></fileUpload>
 			<template #footer>
@@ -314,12 +301,8 @@ function updateSuccess(res) {
 getList();
 getDeptTree()
 </script>
-<style lang="scss" scoped>
+<style lang="scss">
 .device_image {
 	width: 150px;
-}
-
-.align-center-dialog {
-	margin-top: auto !important;
 }
 </style>
