@@ -72,9 +72,11 @@
                <el-table-column label="用户昵称" align="center" key="nickName" prop="nickName" v-if="columns[2].visible"
                   :show-overflow-tooltip="true" />
                <el-table-column label="部门" align="center" key="deptName" prop="dept.deptName" v-if="columns[3].visible"
-                  :show-overflow-tooltip="true" /> <el-table-column label="部门分类" align="center" prop="dept.deptType">
+                  :show-overflow-tooltip="true" />
+               <el-table-column label="部门分类" align="center" prop="dept.deptType">
                   <template #default="scope">
-                     <dict-tag :options="gf_dept_type" :value="scope.row.dept.deptType" />
+                     <dict-tag :options="gf_dept_type" :value="scope.row.dept.deptType" v-if="scope.row.dept" />
+                     <el-tag type="danger" effect="plain" v-else>无</el-tag>
                   </template>
                </el-table-column>
                <el-table-column label="手机号码" align="center" key="phonenumber" prop="phonenumber"
@@ -88,6 +90,16 @@
                <el-table-column label="创建时间" align="center" prop="createTime" v-if="columns[6].visible" width="160">
                   <template #default="scope">
                      <span>{{ parseTime(scope.row.createTime) }}</span>
+                  </template>
+               </el-table-column>
+               <el-table-column label="白名单权限" align="center" prop="dept.deptType">
+                  <template #default="scope">
+                     {{ scope.row.allowedWhite ? '开' : '关' }}
+                  </template>
+               </el-table-column>
+               <el-table-column label="充值权限" align="center" prop="dept.deptType">
+                  <template #default="scope">
+                     {{ scope.row.allowedRecharge ? '开' : '关' }}
                   </template>
                </el-table-column>
                <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
@@ -118,7 +130,7 @@
 
       <!-- 添加或修改用户配置对话框 -->
       <el-dialog :title="title" v-model="open" width="600px" append-to-body>
-         <el-form :model="form" :rules="rules" ref="userRef" label-width="80px">
+         <el-form :model="form" :rules="rules" ref="userRef" label-width="100px">
             <el-row>
                <el-col :span="12">
                   <el-form-item label="用户昵称" prop="nickName">
@@ -191,6 +203,18 @@
                         <el-option v-for="item in roleOptions" :key="item.roleId" :label="item.roleName"
                            :value="item.roleId" :disabled="item.status == 1"></el-option>
                      </el-select>
+                  </el-form-item>
+               </el-col>
+            </el-row>
+            <el-row>
+               <el-col :span="12">
+                  <el-form-item label="白名单权限">
+                     <el-switch v-model="form.allowedWhite" :active-value="true" :inactive-value="false"></el-switch>
+                  </el-form-item>
+               </el-col>
+               <el-col :span="12">
+                  <el-form-item label="充值权限">
+                     <el-switch v-model="form.allowedRecharge" :active-value="true" :inactive-value="false"></el-switch>
                   </el-form-item>
                </el-col>
             </el-row>
