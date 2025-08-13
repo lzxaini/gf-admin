@@ -36,12 +36,13 @@
                <dict-tag :options="gf_dept_type" :value="scope.row.deptType" />
             </template>
          </el-table-column>
-         <el-table-column prop="orderNum" label="排序" width="200"></el-table-column>
-         <el-table-column prop="status" label="状态" width="100">
+         <!-- <el-table-column prop="orderNum" label="排序"></el-table-column> -->
+         <el-table-column prop="status" label="状态">
             <template #default="scope">
                <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
             </template>
          </el-table-column>
+         <el-table-column prop="leader" label="管理员" />
          <el-table-column label="创建时间" align="center" prop="createTime" width="200">
             <template #default="scope">
                <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -51,6 +52,8 @@
             <template #default="scope">
                <!-- <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
                   v-hasPermi="['system:dept:edit']">修改</el-button> -->
+               <el-button link type="primary" icon="Edit" @click="openSelectUser(scope.row)"
+                  v-hasPermi="['system:dept:edit']">绑定</el-button>
                <el-button link type="primary" icon="Plus" @click="handleAdd(scope.row)"
                   v-hasPermi="['system:dept:add']">新增</el-button>
                <el-button v-if="scope.row.parentId != 0" link type="primary" icon="Delete"
@@ -67,7 +70,7 @@
                   <el-form-item label="上级部门" prop="parentId">
                      <el-tree-select v-model="form.parentId" :data="deptOptions"
                         :props="{ value: 'deptId', label: 'deptName', children: 'children' }" value-key="deptId"
-                        placeholder="选择上级部门" check-strictly :disabled="true"/>
+                        placeholder="选择上级部门" check-strictly :disabled="true" />
                   </el-form-item>
                </el-col>
                <el-col :span="12">
@@ -78,13 +81,8 @@
                <el-col :span="12" v-if="deptType != 4">
                   <el-form-item label="部门分类" prop="deptType">
                      <el-select v-model="form.deptType" placeholder="请选择部门分类" clearable>
-                        <el-option
-                           v-for="dict in gf_dept_type"
-                           :key="dict.value"
-                           :label="dict.label"
-                           :value="dict.value"
-                           :disabled="Number(dict.value) <= Number(deptType)"
-                        />
+                        <el-option v-for="dict in gf_dept_type" :key="dict.value" :label="dict.label"
+                           :value="dict.value" :disabled="Number(dict.value) <= Number(deptType)" />
                      </el-select>
                   </el-form-item>
                </el-col>
@@ -112,7 +110,7 @@
                   <el-form-item label="部门状态">
                      <el-radio-group v-model="form.status">
                         <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
-                        }}</el-radio>
+                           }}</el-radio>
                      </el-radio-group>
                   </el-form-item>
                </el-col>
@@ -140,11 +138,13 @@
          </template>
       </el-dialog>
    </div>
+   <select-user ref="selectRef" :roleId="queryParams.roleId" @setUserInfo="setUserInfo" @ok="getList"/>
 </template>
 
 <script setup name="Dept">
 import { listDept, getDept, delDept, addDept, updateDept, listDeptExcludeChild } from "@/api/system/dept";
 import areaOptions from '@/utils/areaList.json';
+import selectUser from "./selectUser";
 
 const { proxy } = getCurrentInstance();
 const { sys_normal_disable, gf_dept_type } = proxy.useDict("sys_normal_disable", "gf_dept_type");
@@ -159,11 +159,7 @@ const isExpandAll = ref(true);
 const refreshTable = ref(true);
 const deptType = ref()
 const data = reactive({
-   form: {
-      // addressArr: [], // 选中的省市区数组
-      address: '',    // 用逗号分割的地址字符串
-      addressDetail: '' // 详细地址
-   },
+   form: {},
    queryParams: {
       deptName: undefined,
       status: undefined
@@ -258,25 +254,6 @@ function handleUpdate(row) {
 function submitForm() {
    proxy.$refs["deptRef"].validate(valid => {
       if (valid) {
-         // // 提交前确保address字段已更新
-         // if (form.value.addressArr && form.value.addressArr.length > 0) {
-         //    form.value.address = form.value.addressArr.map(code => {
-         //       // 通过areaOptions查找label
-         //       let node = areaOptions.find(item => item.value === code) || {};
-         //       if (node.label) return node.label;
-         //       // 递归查找
-         //       for (const province of areaOptions) {
-         //          if (province.value === code) return province.label;
-         //          for (const city of (province.children || [])) {
-         //             if (city.value === code) return city.label;
-         //             for (const area of (city.children || [])) {
-         //                if (area.value === code) return area.label;
-         //             }
-         //          }
-         //       }
-         //       return code;
-         //    }).join(',');
-         // }
          if (form.value.deptId != undefined) {
             updateDept(form.value).then(response => {
                proxy.$modal.msgSuccess("修改成功");
@@ -302,9 +279,21 @@ function handleDelete(row) {
       proxy.$modal.msgSuccess("删除成功");
    }).catch(() => { });
 }
-/** 省市区选择变化时处理 */
-function handleAddressChange(val, selectedData) {
-   // form.value.address = JSON.stringify(val)
+/** 打开授权用户表弹窗 */
+function openSelectUser(row) {
+   proxy.$refs["selectRef"].show();
+   getDept(row.deptId).then(response => {
+      form.value = response.data;
+   });
+}
+function setUserInfo(info) {
+   let { userId, userName } = info
+   form.value.leaderId = userId
+   form.value.leader = userName
+   updateDept(form.value).then(response => {
+      proxy.$modal.msgSuccess("绑定成功");
+      proxy.$refs["selectRef"].hide();
+   });
 }
 getList();
 </script>
