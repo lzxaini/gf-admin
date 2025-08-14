@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-08-09 10:23:40
+ * @LastEditTime: 2025-08-13 17:45:00
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -66,7 +66,14 @@
 										{{ item.serialNumber }}
 									</el-descriptions-item>
 									<el-descriptions-item label="设备状态">
-										<dict-tag :options="gf_running_state" :value="item.runningState" style="display:inline-block;" />
+										<!-- <dict-tag :options="gf_running_state" :value="item.runningState" style="display:inline-block;" /> -->
+										<el-tag :type="item.runningState == 0 ? 'danger' : 'success'">{{ item.runningState == 0 ? '未绑定' :
+											'已绑定' }}</el-tag>
+									</el-descriptions-item>
+									<el-descriptions-item label="运行状态">
+										<!-- <dict-tag :options="gf_running_state" :value="item.status" style="display:inline-block;" /> -->
+										<el-tag :type="item.status == 2 ? 'success' : 'danger'">{{ item.status == 2 ? '在线' :
+											'离线' }}</el-tag>
 									</el-descriptions-item>
 									<el-descriptions-item label="激活时间">
 										<!-- {{ parseTime(item.createTime, '{y}-{m}-{d}') }} -->
@@ -241,7 +248,7 @@ function submitForm() {
 			if (form.value.id != null) {
 				let params = {
 					...form.value,
-					runningState: 1
+					runningState: 2
 				}
 				updateDevice(params).then(response => {
 					proxy.$modal.msgSuccess("修改成功");
