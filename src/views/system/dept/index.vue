@@ -50,9 +50,9 @@
          </el-table-column>
          <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
             <template #default="scope">
-               <!-- <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
-                  v-hasPermi="['system:dept:edit']">修改</el-button> -->
-               <el-button link type="primary" icon="Edit" @click="openSelectUser(scope.row)"
+               <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
+                  v-hasPermi="['system:dept:edit']">修改</el-button>
+               <el-button link type="primary" icon="Connection" @click="openSelectUser(scope.row)"
                   v-hasPermi="['system:dept:edit']">绑定</el-button>
                <el-button link type="primary" icon="Plus" @click="handleAdd(scope.row)"
                   v-hasPermi="['system:dept:add']">新增</el-button>
@@ -66,7 +66,7 @@
       <el-dialog :title="title" v-model="open" width="600px" append-to-body>
          <el-form ref="deptRef" :model="form" :rules="rules" label-width="80px">
             <el-row>
-               <el-col :span="24" v-if="form.parentId !== 0">
+               <el-col :span="24" v-if="form.parentId !== 0 && title !== '修改部门'">
                   <el-form-item label="上级部门" prop="parentId">
                      <el-tree-select v-model="form.parentId" :data="deptOptions"
                         :props="{ value: 'deptId', label: 'deptName', children: 'children' }" value-key="deptId"
@@ -78,7 +78,7 @@
                      <el-input v-model="form.deptName" placeholder="请输入部门名称" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12" v-if="deptType != 4">
+               <el-col :span="12" v-if="deptType != 4 && title !== '修改部门'">
                   <el-form-item label="部门分类" prop="deptType">
                      <el-select v-model="form.deptType" placeholder="请选择部门分类" clearable>
                         <el-option v-for="dict in gf_dept_type" :key="dict.value" :label="dict.label"
@@ -91,11 +91,11 @@
                      <el-input-number v-model="form.orderNum" controls-position="right" :min="0" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12">
+               <!-- <el-col :span="12" v-if="title !== '修改部门'">
                   <el-form-item label="负责人" prop="leader">
-                     <el-input v-model="form.leader" placeholder="请输入负责人" maxlength="20" />
+                     <el-input v-model="form.leader" placeholder="请输入负责人" maxlength="20" :disabled="true" />
                   </el-form-item>
-               </el-col>
+               </el-col> -->
                <el-col :span="12">
                   <el-form-item label="联系电话" prop="phone">
                      <el-input v-model="form.phone" placeholder="请输入联系电话" maxlength="11" />
@@ -106,14 +106,14 @@
                      <el-input v-model="form.email" placeholder="请输入邮箱" maxlength="50" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12">
+               <!-- <el-col :span="12">
                   <el-form-item label="部门状态">
                      <el-radio-group v-model="form.status">
                         <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
                            }}</el-radio>
                      </el-radio-group>
                   </el-form-item>
-               </el-col>
+               </el-col> -->
                <!-- <el-col :span="24">
                   <el-form-item label="部门地址" prop="address">
                      <el-cascader style="width: 100%;" v-model="form.address" :options="areaOptions"
@@ -138,7 +138,7 @@
          </template>
       </el-dialog>
    </div>
-   <select-user ref="selectRef" :roleId="queryParams.roleId" @setUserInfo="setUserInfo" @ok="getList"/>
+   <select-user ref="selectRef" :roleId="queryParams.roleId" @setUserInfo="setUserInfo" @ok="getList" />
 </template>
 
 <script setup name="Dept">
