@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-08 17:33:14
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-08-08 17:46:13
+ * @LastEditTime: 2025-08-14 13:02:46
  * @FilePath: \ryv3\src\views\gf\serviceRecords\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -32,14 +32,15 @@
 
     <el-table v-loading="loading" :data="serviceRecordsList">
       <el-table-column label="服务单号" align="center" prop="code" />
-      <el-table-column label="服务状态" align="center" prop="service">
+      <el-table-column label="服务内容" align="center" prop="service">
         <template #default="scope">
           <dict-tag :options="gf_service" :value="scope.row.service" />
         </template>
       </el-table-column>
       <el-table-column label="设备识别号" align="center" prop="serialNumber" />
       <el-table-column label="部门" align="center" prop="deptName" />
-      <el-table-column label="服务者" align="center" prop="serviceUserName" />
+      <el-table-column label="服务者" align="center" prop="userName" />
+      <el-table-column label="服务时长（分）" align="center" prop="runningTime" />
       <el-table-column label="开始时间" align="center" prop="startTime" width="180">
         <template #default="scope">
           <span>{{ scope.row.startTime }}</span>
@@ -50,12 +51,11 @@
           <span>{{ scope.row.endTime }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="服务时长（分）" align="center" prop="remainingTime" />
-      <el-table-column label="设备状态" align="center" prop="status">
+      <!-- <el-table-column label="设备状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :options="iot_device_status" :value="scope.row.status" />
         </template>
-      </el-table-column>
+      </el-table-column> -->
     </el-table>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum"
