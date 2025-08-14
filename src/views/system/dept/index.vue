@@ -137,8 +137,8 @@
             </div>
          </template>
       </el-dialog>
+      <select-user ref="selectRef" :roleId="queryParams.roleId" @setUserInfo="setUserInfo" @ok="getList" />
    </div>
-   <select-user ref="selectRef" :roleId="queryParams.roleId" @setUserInfo="setUserInfo" @ok="getList" />
 </template>
 
 <script setup name="Dept">

@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-09 09:36:21
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-08-09 10:27:33
+ * @LastEditTime: 2025-08-14 14:33:37
  * @FilePath: \ryv3\src\views\gf\teamJoinRequests\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -27,18 +27,6 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <!-- <el-col :span="1.5">
-        <el-button type="primary" plain icon="Plus" @click="handleAdd"
-          v-hasPermi="['gf:teamJoinRequests:add']">新增</el-button>
-      </el-col> -->
-      <!-- <el-col :span="1.5">
-        <el-button type="success" plain icon="Edit" :disabled="single" @click="handleUpdate"
-          v-hasPermi="['gf:teamJoinRequests:edit']">审批</el-button>
-      </el-col> -->
-      <!-- <el-col :span="1.5">
-        <el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete"
-          v-hasPermi="['gf:teamJoinRequests:remove']">删除</el-button>
-      </el-col> -->
       <el-col :span="1.5">
         <el-button type="warning" plain icon="Download" @click="handleExport"
           v-hasPermi="['gf:teamJoinRequests:export']">导出</el-button>
@@ -59,7 +47,6 @@
           <span>{{ scope.row.requestTime }}</span>
         </template>
       </el-table-column>
-      <!-- <el-table-column label="备注" align="center" prop="remark" /> -->
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button :disabled="scope.row.status != 0" link type="primary" icon="Edit" @click="handleUpdate(scope.row)"

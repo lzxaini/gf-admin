@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-08 17:33:14
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-08-14 13:02:46
+ * @LastEditTime: 2025-08-14 14:33:22
  * @FilePath: \ryv3\src\views\gf\serviceRecords\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -51,11 +51,6 @@
           <span>{{ scope.row.endTime }}</span>
         </template>
       </el-table-column>
-      <!-- <el-table-column label="设备状态" align="center" prop="status">
-        <template #default="scope">
-          <dict-tag :options="iot_device_status" :value="scope.row.status" />
-        </template>
-      </el-table-column> -->
     </el-table>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum"
