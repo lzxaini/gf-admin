@@ -126,10 +126,10 @@
                         <el-button link type="primary" icon="Key" @click="handleResetPwd(scope.row)"
                            v-hasPermi="['system:user:resetPwd']"></el-button>
                      </el-tooltip>
-                     <el-tooltip content="分配角色" placement="top" v-if="scope.row.userId !== 1">
+                     <!-- <el-tooltip content="分配角色" placement="top" v-if="scope.row.userId !== 1">
                         <el-button link type="primary" icon="CircleCheck" @click="handleAuthRole(scope.row)"
                            v-hasPermi="['system:role:assignment']"></el-button>
-                     </el-tooltip>
+                     </el-tooltip> -->
                   </template>
                </el-table-column>
             </el-table>
@@ -189,25 +189,7 @@
                      </el-select>
                   </el-form-item>
                </el-col>
-               <el-col :span="12">
-                  <el-form-item label="状态">
-                     <el-radio-group v-model="form.status">
-                        <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
-                        }}</el-radio>
-                     </el-radio-group>
-                  </el-form-item>
-               </el-col>
-            </el-row>
-            <el-row>
-               <el-col :span="12">
-                  <el-form-item label="岗位">
-                     <el-select v-model="form.postIds" multiple placeholder="请选择">
-                        <el-option v-for="item in postOptions" :key="item.postId" :label="item.postName"
-                           :value="item.postId" :disabled="item.status == 1"></el-option>
-                     </el-select>
-                  </el-form-item>
-               </el-col>
-               <el-col :span="12">
+               <el-col :span="6">
                   <el-form-item label="角色">
                      <el-select v-model="form.roleIds[0]" placeholder="请选择">
                         <el-option v-for="item in roleOptions" :key="item.roleId" :label="item.roleName"
@@ -217,6 +199,14 @@
                </el-col>
             </el-row>
             <el-row>
+               <!-- <el-col :span="12">
+                  <el-form-item label="岗位">
+                     <el-select v-model="form.postIds" multiple placeholder="请选择">
+                        <el-option v-for="item in postOptions" :key="item.postId" :label="item.postName"
+                           :value="item.postId" :disabled="item.status == 1"></el-option>
+                     </el-select>
+                  </el-form-item>
+               </el-col> -->
                <el-col :span="8">
                   <el-form-item label="白名单权限">
                      <el-switch v-model="form.allowedWhite" :active-value="true" :inactive-value="false"></el-switch>
@@ -234,7 +224,15 @@
                </el-col>
             </el-row>
             <el-row>
-               <el-col :span="24">
+               <el-col :span="12">
+                  <el-form-item label="状态">
+                     <el-radio-group v-model="form.status">
+                        <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
+                        }}</el-radio>
+                     </el-radio-group>
+                  </el-form-item>
+               </el-col>
+               <el-col :span="12">
                   <el-form-item label="备注">
                      <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
                   </el-form-item>
