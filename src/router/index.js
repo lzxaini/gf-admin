@@ -161,9 +161,9 @@ export const dynamicRoutes = [
 ]
 
 const router = createRouter({
-  // history: createWebHistory(),
+  history: createWebHistory(),
   // hash的路由模式
-  history: createWebHashHistory(),
+  // history: createWebHashHistory(),
   routes: constantRoutes,
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {
