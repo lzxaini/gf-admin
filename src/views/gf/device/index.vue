@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-08-13 17:45:00
+ * @LastEditTime: 2025-08-14 17:18:16
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -14,9 +14,17 @@
 				<el-form-item label="设备识别号" prop="serialNumber">
 					<el-input v-model="queryParams.serialNumber" placeholder="请输入设备识别号" clearable @keyup.enter="handleQuery" />
 				</el-form-item>
-				<el-form-item label="运行状态" prop="runningState">
-					<el-select v-model="queryParams.runningState" placeholder="请选择运行状态" clearable style="width: 200px;">
-						<el-option v-for="dict in gf_running_state" :key="dict.value" :label="dict.label" :value="dict.value" />
+				<!-- <el-form-item label="运行状态" prop="status">
+					<el-select v-model="queryParams.status" placeholder="请选择运行状态" clearable style="width: 200px;">
+						<el-option key="1" label="未激活" :value="1" />
+						<el-option key="2" label="在线" :value="2" />
+						<el-option key="3" label="离线" :value="3" />
+					</el-select>
+				</el-form-item> -->
+				<el-form-item label="绑定状态" prop="runningState">
+					<el-select v-model="queryParams.runningState" placeholder="请选择绑定状态" clearable style="width: 200px;">
+						<el-option v-for="dict in gf_running_state" :key="dict.value"
+							:label="dict.value == '0' ? '未绑定' : dict.label" :value="dict.value" />
 					</el-select>
 				</el-form-item>
 				<el-form-item>
@@ -67,14 +75,14 @@
 									</el-descriptions-item>
 									<el-descriptions-item label="设备状态">
 										<!-- <dict-tag :options="gf_running_state" :value="item.runningState" style="display:inline-block;" /> -->
-										<el-tag :type="item.runningState == 0 ? 'danger' : 'success'">{{ item.runningState == 0 ? '未绑定' :
-											'已绑定' }}</el-tag>
+										<el-tag :type="item.runningState == 0 ? 'danger' : item.runningState == 1 ? 'success' : 'warning'">
+											{{ item.runningState == 0 ? '未绑定' : item.runningState == 1 ? '运行中' : '已停止' }}
+										</el-tag>
 									</el-descriptions-item>
-									<el-descriptions-item label="运行状态">
-										<!-- <dict-tag :options="gf_running_state" :value="item.status" style="display:inline-block;" /> -->
+									<!-- <el-descriptions-item label="运行状态">
 										<el-tag :type="item.status == 2 ? 'success' : 'danger'">{{ item.status == 2 ? '在线' :
 											'离线' }}</el-tag>
-									</el-descriptions-item>
+									</el-descriptions-item> -->
 									<el-descriptions-item label="激活时间">
 										<!-- {{ parseTime(item.createTime, '{y}-{m}-{d}') }} -->
 										{{ item.createTime }}
