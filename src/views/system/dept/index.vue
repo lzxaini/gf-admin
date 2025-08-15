@@ -54,6 +54,8 @@
                   v-hasPermi="['system:dept:edit']">修改</el-button>
                <el-button link type="primary" icon="Connection" @click="openSelectUser(scope.row)"
                   v-hasPermi="['system:dept:edit']">绑定</el-button>
+               <el-button link type="primary" icon="Wallet" @click="rechargeDialog(scope.row)"
+                  v-hasPermi="['system:dept:edit']">充值</el-button>
                <el-button link type="primary" icon="Plus" @click="handleAdd(scope.row)"
                   v-hasPermi="['system:dept:add']">新增</el-button>
                <el-button v-if="scope.row.parentId != 0" link type="primary" icon="Delete"
@@ -137,6 +139,29 @@
             </div>
          </template>
       </el-dialog>
+
+      <el-dialog title="充值点数" v-model="rechargeOpen" width="600px" append-to-body>
+         <el-form label-width="100" style="margin: 20px 0;">
+            <el-row>
+               <el-col :span="12">
+                  <el-form-item label="部门">
+                     <el-input v-model="rechargeInfo.deptName" :disabled="true" />
+                  </el-form-item>
+               </el-col>
+               <el-col :span="12">
+                  <el-form-item label="充值点数">
+                     <el-input-number v-model="rechargeAmount" placeholder="请输入充值点数" />
+                  </el-form-item>
+               </el-col>
+            </el-row>
+         </el-form>
+         <template #footer>
+            <div class="dialog-footer">
+               <el-button type="primary" @click="rechargeSubmit">确 定</el-button>
+               <el-button @click="rechargeClose">取 消</el-button>
+            </div>
+         </template>
+      </el-dialog>
       <select-user ref="selectRef" :roleId="queryParams.roleId" @setUserInfo="setUserInfo" @ok="getList" />
    </div>
 </template>
@@ -145,6 +170,7 @@
 import { listDept, getDept, delDept, addDept, updateDept, listDeptExcludeChild } from "@/api/system/dept";
 import areaOptions from '@/utils/areaList.json';
 import selectUser from "./selectUser";
+import { addRechargeRecords } from "../../../api/gf/rechargeRecords";
 
 const { proxy } = getCurrentInstance();
 const { sys_normal_disable, gf_dept_type } = proxy.useDict("sys_normal_disable", "gf_dept_type");
@@ -158,6 +184,9 @@ const deptOptions = ref([]);
 const isExpandAll = ref(true);
 const refreshTable = ref(true);
 const deptType = ref()
+const rechargeOpen = ref(false);
+const rechargeInfo = ref()
+const rechargeAmount = ref(0)
 const data = reactive({
    form: {},
    queryParams: {
@@ -294,6 +323,25 @@ function setUserInfo(info) {
       proxy.$modal.msgSuccess("绑定成功");
       proxy.$refs["selectRef"].hide();
    });
+}
+function rechargeDialog(row) {
+   rechargeInfo.value = row
+   rechargeOpen.value = true
+}
+function rechargeSubmit() {
+   let params = {
+      deptId: rechargeInfo.value.deptId,
+      deptName: rechargeInfo.value.deptName,
+      rechargeAmount: rechargeAmount.value
+   }
+   addRechargeRecords(params).then(res => {
+      proxy.$modal.msgSuccess("充值成功");
+      rechargeOpen.value = false
+   })
+}
+function rechargeClose(row) {
+   rechargeInfo.value = null
+   rechargeOpen.value = false
 }
 getList();
 </script>
