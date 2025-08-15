@@ -66,11 +66,15 @@
 
             <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
                <el-table-column type="selection" width="50" align="center" />
-               <el-table-column label="用户编号" align="center" key="userId" prop="userId" v-if="columns[0].visible" />
+               <el-table-column label="用户编号" align="center" key="userId" prop="userId" v-if="columns[0].visible">
+                  <template #default="scope">
+                     GF{{ String(scope.row.userId).padStart(5, '0') }}
+                  </template>
+               </el-table-column>
                <el-table-column label="用户名称" align="center" key="userName" prop="userName" v-if="columns[1].visible"
                   :show-overflow-tooltip="true" />
-               <el-table-column label="用户昵称" align="center" key="nickName" prop="nickName" v-if="columns[2].visible"
-                  :show-overflow-tooltip="true" />
+               <!-- <el-table-column label="用户昵称" align="center" key="nickName" prop="nickName" v-if="columns[2].visible"
+                  :show-overflow-tooltip="true" /> -->
                <el-table-column label="部门" align="center" key="deptName" prop="dept.deptName" v-if="columns[3].visible"
                   :show-overflow-tooltip="true" />
                <el-table-column label="部门分类" align="center" prop="dept.deptType">
@@ -162,10 +166,18 @@
                   </el-form-item>
                </el-col>
                <el-col :span="12">
+                  <el-form-item label="角色">
+                     <el-select v-model="form.roleIds[0]" placeholder="请选择">
+                        <el-option v-for="item in roleOptions" :key="item.roleId" :label="item.roleName"
+                           :value="item.roleId" :disabled="item.status == 1"></el-option>
+                     </el-select>
+                  </el-form-item>
+               </el-col>
+               <!-- <el-col :span="12">
                   <el-form-item label="邮箱" prop="email">
                      <el-input v-model="form.email" placeholder="请输入邮箱" maxlength="50" />
                   </el-form-item>
-               </el-col>
+               </el-col> -->
             </el-row>
             <el-row>
                <el-col :span="12">
@@ -180,7 +192,7 @@
                   </el-form-item>
                </el-col>
             </el-row>
-            <el-row>
+            <!-- <el-row>
                <el-col :span="12">
                   <el-form-item label="用户性别">
                      <el-select v-model="form.sex" placeholder="请选择">
@@ -189,15 +201,7 @@
                      </el-select>
                   </el-form-item>
                </el-col>
-               <el-col :span="12">
-                  <el-form-item label="角色">
-                     <el-select v-model="form.roleIds[0]" placeholder="请选择">
-                        <el-option v-for="item in roleOptions" :key="item.roleId" :label="item.roleName"
-                           :value="item.roleId" :disabled="item.status == 1"></el-option>
-                     </el-select>
-                  </el-form-item>
-               </el-col>
-            </el-row>
+            </el-row> -->
             <el-row>
                <!-- <el-col :span="12">
                   <el-form-item label="岗位">
@@ -228,7 +232,7 @@
                   <el-form-item label="状态">
                      <el-radio-group v-model="form.status">
                         <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
-                        }}</el-radio>
+                           }}</el-radio>
                      </el-radio-group>
                   </el-form-item>
                </el-col>
