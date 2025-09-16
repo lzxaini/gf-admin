@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2024-05-25 16:30:54
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2024-07-30 11:04:04
+ * @LastEditTime: 2025-09-16 10:25:52
  * @FilePath: \ryv3\src\store\modules\useMQTTStore.js
  * @Description: Fuck Bug
  * 微信：My-World-40
@@ -13,8 +13,10 @@ import { getToken, getUserName } from '@/utils/auth'
 import * as mqtt from 'mqtt/dist/mqtt.min';
 import { dayjs } from 'element-plus'
 let options = {
-  password: getToken(),
-  username: getUserName(),
+  // password: getToken(),
+  // username: getUserName(),
+  password: 'oP4~hF0]aB7.',
+  username: 'web',
   cleanSession: true,
   keepAlive: 30,
   clientId: 'web-' + Math.random().toString(16).substr(2),
@@ -32,6 +34,8 @@ export const useMQTTStore = defineStore('mqtt', () => {
     client: null,
     isConnected: false,
   });
+  // 消息回调列表
+  const messageCallbacks = [];
   const getNowDateTime = () => {
     return dayjs(new Date()).format('YYYY-MM-DD HH:mm')
   }
@@ -58,6 +62,17 @@ export const useMQTTStore = defineStore('mqtt', () => {
 
     state.client.on('reconnect', () => {
       console.log('正在重新连接MQTT服务器...', getNowDateTime());
+    });
+
+    // 统一分发消息给所有回调
+    state.client.on('message', (topic, message) => {
+      messageCallbacks.forEach(cb => {
+        try {
+          cb(topic, message);
+        } catch (e) {
+          console.error('MQTT消息回调异常:', e);
+        }
+      });
     });
   };
 
@@ -110,9 +125,10 @@ export const useMQTTStore = defineStore('mqtt', () => {
     }
   };
   // 消息监听
+  // 注册消息回调，无论连接状态都可注册
   const onMessage = (func) => {
-    if (state.isConnected) {
-      state.client.on('message', func);
+    if (typeof func === 'function') {
+      messageCallbacks.push(func);
     }
   };
   return {
