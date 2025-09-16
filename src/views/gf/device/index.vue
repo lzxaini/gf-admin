@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-09-16 10:19:36
+ * @LastEditTime: 2025-09-16 10:31:50
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -95,6 +95,7 @@
 						<el-button-group>
 							<el-button type="primary" size="mini" icon="edit" @click="handleUpdate(item)" v-hasPermi="['gf:device:edit']">绑定</el-button>
 							<el-button v-if="item.deviceType == 'WIFI'" type="danger" size="mini" @click="handleReset(item)" v-hasPermi="['gf:device:remove']">重置配网</el-button>
+							<el-button v-if="item.deviceType == 'WIFI'" type="info" size="mini" @click="handleReboot(item)" v-hasPermi="['gf:device:remove']">重启设备</el-button>
 							<el-button type="warning" size="mini" icon="delete" @click="handleBind(item)" v-hasPermi="['gf:device:remove']">解绑</el-button>
 						</el-button-group>
 					</el-card>
@@ -338,7 +339,37 @@ function handleReset(row) {
 		})
 		.catch(() => {
 			loading.value = false;
-			proxy.$modal.msgError('获取设备信息失败，无法重置配网！');
+			proxy.$modal.msgError('获取设备信息失败，设备离线，无法重置配网！');
+		});
+}
+/** 重启设备 */
+function handleReboot(row) {
+	let { deviceType, serialNumber } = row;
+	// 将serialNumber转换为wifi-去掉冒号的mac地址
+	loading.value = true;
+	serialNumber = serialNumber.replace(/:/g, '');
+	mqttStore.publish(`/req/wifi-${serialNumber}`, 'config-get');
+	// 获取设备信息
+	getDeviceInfo(serialNumber)
+		.then(deviceInfo => {
+			console.log('设备信息: ', deviceInfo);
+			loading.value = false;
+			proxy.$modal
+				.confirm('是否确认重启设备编号为"' + row.serialNumber + '"的设备？')
+				.then(function () {
+					if (deviceType == 'WIFI') {
+						mqttStore.publish(`/req/wifi-${serialNumber}`, 'system-reboot');
+						proxy.$modal.msgSuccess('重启指令已发送，请等待设备重启！');
+					} else {
+						proxy.$modal.msgWarning('4G设备不支持重启操作！');
+					}
+				})
+				.then(() => {})
+				.catch(() => {});
+		})
+		.catch(() => {
+			loading.value = false;
+			proxy.$modal.msgError('获取设备信息失败，设备离线，无法重启设备！');
 		});
 }
 /** 获取设备信息 */
