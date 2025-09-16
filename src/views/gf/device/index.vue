@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-09-16 11:19:44
+ * @LastEditTime: 2025-09-16 11:24:33
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -481,6 +481,10 @@ onMounted(() => {
 	nextTick(() => {
 		getList();
 	});
+});
+// 页面卸载时断开连接
+onBeforeUnmount(() => {
+	mqttStore.disconnect();
 });
 </script>
 <style lang="scss">
