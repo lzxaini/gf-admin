@@ -124,11 +124,17 @@ export const useMQTTStore = defineStore('mqtt', () => {
       console.error('无法取消订阅，MQTT客户端未连接');
     }
   };
-  // 消息监听
   // 注册消息回调，无论连接状态都可注册
   const onMessage = (func) => {
     if (typeof func === 'function') {
       messageCallbacks.push(func);
+    }
+  };
+  // 移除消息回调
+  const offMessage = (func) => {
+    const idx = messageCallbacks.indexOf(func);
+    if (idx !== -1) {
+      messageCallbacks.splice(idx, 1);
     }
   };
   return {
@@ -138,6 +144,7 @@ export const useMQTTStore = defineStore('mqtt', () => {
     publish,
     subscribe,
     unsubscribe,
-    onMessage
+    onMessage,
+    offMessage
   };
 });
