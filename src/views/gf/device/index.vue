@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-09-16 10:31:50
+ * @LastEditTime: 2025-09-16 11:19:44
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -45,7 +45,7 @@
 			</el-form>
 		</el-card>
 		<el-card style="margin-top: 20px">
-			<el-row :gutter="30" v-loading="loading">
+			<el-row :gutter="30" v-loading="loading" :element-loading-text="loadingText" element-loading-background="rgba(122, 122, 122, 0.8)">
 				<el-col :xs="24" :sm="12" :md="12" :lg="8" :xl="6" v-for="(item, index) in deviceList" :key="index" style="margin-bottom: 30px; text-align: center">
 					<el-card shadow="always">
 						<el-row type="flex" :gutter="10" justify="space-between">
@@ -96,6 +96,7 @@
 							<el-button type="primary" size="mini" icon="edit" @click="handleUpdate(item)" v-hasPermi="['gf:device:edit']">绑定</el-button>
 							<el-button v-if="item.deviceType == 'WIFI'" type="danger" size="mini" @click="handleReset(item)" v-hasPermi="['gf:device:remove']">重置配网</el-button>
 							<el-button v-if="item.deviceType == 'WIFI'" type="info" size="mini" @click="handleReboot(item)" v-hasPermi="['gf:device:remove']">重启设备</el-button>
+							<el-button v-if="item.deviceType == 'WIFI'" type="success" size="mini" @click="handleOTA(item)" v-hasPermi="['gf:device:remove']">OTA</el-button>
 							<el-button type="warning" size="mini" icon="delete" @click="handleBind(item)" v-hasPermi="['gf:device:remove']">解绑</el-button>
 						</el-button-group>
 					</el-card>
@@ -163,6 +164,7 @@ const deviceList = ref([]);
 const open = ref(false);
 const importDialog = ref(false);
 const loading = ref(true);
+const loadingText = ref('正在加载中，请稍后...');
 const showSearch = ref(true);
 const total = ref(0);
 const title = ref('');
@@ -370,6 +372,55 @@ function handleReboot(row) {
 		.catch(() => {
 			loading.value = false;
 			proxy.$modal.msgError('获取设备信息失败，设备离线，无法重启设备！');
+		});
+}
+/** OTA升级 */
+function handleOTA(row) {
+	let { deviceType, serialNumber } = row;
+	// 将serialNumber转换为wifi-去掉冒号的mac地址
+	loading.value = true;
+	loadingText.value = '正在进行OTA升级，请稍等...';
+	serialNumber = serialNumber.replace(/:/g, '');
+	mqttStore.publish(`/req/wifi-${serialNumber}`, 'config-get');
+	// 获取设备信息
+	getDeviceInfo(serialNumber)
+		.then(oldDeviceInfo => {
+			console.log('设备信息: ', oldDeviceInfo);
+			proxy.$modal
+				.confirm('是否确认对设备编号为"' + row.serialNumber + '"的设备进行OTA升级？')
+				.then(function () {
+					if (deviceType == 'WIFI') {
+						mqttStore.publish(`/req/wifi-${serialNumber}`, 'ota-http-cmd ota.guangfkm.cn');
+						proxy.$modal.msgSuccess('OTA升级指令已发送，请等待设备升级！');
+						// 监听OTA start消息
+						const otaStartListener = (topic, message) => {
+							console.log('🥵 ~ otaStartListener ~ topic, message: ', topic, message);
+							if (topic === `/resp/wifi-${serialNumber}` && message.toString().includes('OTA start')) {
+								return proxy.$modal.msgSuccess('设备开始OTA升级，请耐心等待升级完成！');
+							}
+							// OTA完成后我这里会收到一条设备信息
+							if (topic === `/resp/wifi-${serialNumber}` && message.toString().includes('"version": "1.0.0",')) {
+								proxy.$modal.msgSuccess('设备OTA升级完成！');
+								loading.value = false;
+								loadingText.value = '正在加载中，请稍后...';
+								// 升级完成后移除监听
+								mqttStore.offMessage(otaStartListener);
+							}
+						};
+						mqttStore.onMessage(otaStartListener);
+					} else {
+						proxy.$modal.msgWarning('4G设备不支持OTA升级操作！');
+					}
+				})
+				.catch(() => {
+					loading.value = false;
+					loadingText.value = '正在加载中，请稍后...';
+				});
+		})
+		.catch(() => {
+			loading.value = false;
+			loadingText.value = '正在加载中，请稍后...';
+			proxy.$modal.msgError('获取设备信息失败，设备离线，无法进行OTA升级！');
 		});
 }
 /** 获取设备信息 */
