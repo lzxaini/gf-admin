@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-09-20 12:10:26
+ * @LastEditTime: 2025-09-20 12:29:35
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -397,7 +397,7 @@ function handleOTA(row) {
 								return proxy.$modal.msgSuccess('设备开始OTA升级，请耐心等待升级完成！');
 							}
 							// OTA完成后我这里会收到一条设备信息
-							if (topic === `/resp/${serialNumber}` && message.toString().includes('"version": "1.0.0",')) {
+							if (topic === `/resp/${serialNumber}` && message.toString().includes('version')) {
 								proxy.$modal.msgSuccess('设备OTA升级完成！');
 								loading.value = false;
 								loadingText.value = '正在加载中，请稍后...';
