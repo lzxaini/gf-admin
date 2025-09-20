@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-09-20 12:29:35
+ * @LastEditTime: 2025-09-20 14:56:42
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -191,7 +191,7 @@ function getList() {
 	loading.value = true;
 	listDevice(queryParams.value).then(response => {
 		response.data.rows.forEach(item => {
-			item.deviceType = item.serialNumber && item.serialNumber.includes('GF-') ? 'WIFI' : '4G';
+			item.deviceType = item.serialNumber && item.serialNumber.includes('GFKM-') ? 'WIFI' : '4G';
 		});
 		deviceList.value = response.data.rows;
 		total.value = response.data.total;
