@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-09-16 11:24:33
+ * @LastEditTime: 2025-09-20 10:48:25
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -191,7 +191,7 @@ function getList() {
 	loading.value = true;
 	listDevice(queryParams.value).then(response => {
 		response.data.rows.forEach(item => {
-			item.deviceType = item.serialNumber && item.serialNumber.includes(':') ? 'WIFI' : '4G';
+			item.deviceType = item.serialNumber && item.serialNumber.includes('GF-') ? 'WIFI' : '4G';
 		});
 		deviceList.value = response.data.rows;
 		total.value = response.data.total;
@@ -292,8 +292,6 @@ function submitForm() {
 /** 删除按钮操作 */
 function handleBind(row) {
 	let { deviceType, serialNumber } = row;
-	// 将serialNumber转换为wifi-去掉冒号的mac地址
-	serialNumber = serialNumber.replace(/:/g, '');
 	proxy.$modal
 		.confirm('是否确认解绑设备编号为"' + row.serialNumber + '"的数据项？')
 		.then(function () {
@@ -319,10 +317,10 @@ function handleReset(row) {
 	let { deviceType, serialNumber } = row;
 	// 将serialNumber转换为wifi-去掉冒号的mac地址
 	loading.value = true;
-	serialNumber = serialNumber.replace(/:/g, '');
-	mqttStore.publish(`/req/wifi-${serialNumber}`, 'config-get');
+	let deviceId = deviceTransform(serialNumber);
+	mqttStore.publish(`/req/wifi-${deviceId}`, 'config-get');
 	// 获取设备信息
-	getDeviceInfo(serialNumber)
+	getDeviceInfo(deviceId)
 		.then(deviceInfo => {
 			console.log('设备信息: ', deviceInfo);
 			loading.value = false;
@@ -330,7 +328,7 @@ function handleReset(row) {
 				.confirm('是否确认重置配网设备编号为"' + row.serialNumber + '"的数据项？')
 				.then(function () {
 					if (deviceType == 'WIFI') {
-						mqttStore.publish(`/req/wifi-${serialNumber}`, 'network-reset');
+						mqttStore.publish(`/req/wifi-${deviceId}`, 'network-reset');
 						proxy.$modal.msgSuccess('重置配网指令已发送，请等待设备重启！');
 					} else {
 						proxy.$modal.msgWarning('4G设备不支持重置配网操作！');
@@ -349,10 +347,10 @@ function handleReboot(row) {
 	let { deviceType, serialNumber } = row;
 	// 将serialNumber转换为wifi-去掉冒号的mac地址
 	loading.value = true;
-	serialNumber = serialNumber.replace(/:/g, '');
-	mqttStore.publish(`/req/wifi-${serialNumber}`, 'config-get');
+	let deviceId = deviceTransform(serialNumber);
+	mqttStore.publish(`/req/wifi-${deviceId}`, 'config-get');
 	// 获取设备信息
-	getDeviceInfo(serialNumber)
+	getDeviceInfo(deviceId)
 		.then(deviceInfo => {
 			console.log('设备信息: ', deviceInfo);
 			loading.value = false;
@@ -360,7 +358,7 @@ function handleReboot(row) {
 				.confirm('是否确认重启设备编号为"' + row.serialNumber + '"的设备？')
 				.then(function () {
 					if (deviceType == 'WIFI') {
-						mqttStore.publish(`/req/wifi-${serialNumber}`, 'system-reboot');
+						mqttStore.publish(`/req/wifi-${deviceId}`, 'system-reboot');
 						proxy.$modal.msgSuccess('重启指令已发送，请等待设备重启！');
 					} else {
 						proxy.$modal.msgWarning('4G设备不支持重启操作！');
@@ -380,26 +378,26 @@ function handleOTA(row) {
 	// 将serialNumber转换为wifi-去掉冒号的mac地址
 	loading.value = true;
 	loadingText.value = '正在进行OTA升级，请稍等...';
-	serialNumber = serialNumber.replace(/:/g, '');
-	mqttStore.publish(`/req/wifi-${serialNumber}`, 'config-get');
+	let deviceId = deviceTransform(serialNumber);
+	mqttStore.publish(`/req/wifi-${deviceId}`, 'config-get');
 	// 获取设备信息
-	getDeviceInfo(serialNumber)
+	getDeviceInfo(deviceId)
 		.then(oldDeviceInfo => {
 			console.log('设备信息: ', oldDeviceInfo);
 			proxy.$modal
 				.confirm('是否确认对设备编号为"' + row.serialNumber + '"的设备进行OTA升级？')
 				.then(function () {
 					if (deviceType == 'WIFI') {
-						mqttStore.publish(`/req/wifi-${serialNumber}`, 'ota-http-cmd ota.guangfkm.cn');
+						mqttStore.publish(`/req/wifi-${deviceId}`, 'ota-http-cmd ota.guangfkm.cn');
 						proxy.$modal.msgSuccess('OTA升级指令已发送，请等待设备升级！');
 						// 监听OTA start消息
 						const otaStartListener = (topic, message) => {
 							console.log('🥵 ~ otaStartListener ~ topic, message: ', topic, message);
-							if (topic === `/resp/wifi-${serialNumber}` && message.toString().includes('OTA start')) {
+							if (topic === `/resp/wifi-${deviceId}` && message.toString().includes('OTA start')) {
 								return proxy.$modal.msgSuccess('设备开始OTA升级，请耐心等待升级完成！');
 							}
 							// OTA完成后我这里会收到一条设备信息
-							if (topic === `/resp/wifi-${serialNumber}` && message.toString().includes('"version": "1.0.0",')) {
+							if (topic === `/resp/wifi-${deviceId}` && message.toString().includes('"version": "1.0.0",')) {
 								proxy.$modal.msgSuccess('设备OTA升级完成！');
 								loading.value = false;
 								loadingText.value = '正在加载中，请稍后...';
@@ -443,9 +441,9 @@ function handleSubscribeAll() {
 	// 循环订阅所有WIFI设备
 	deviceList.value.forEach(item => {
 		if (item.deviceType === 'WIFI') {
-			let serialNumber = item.serialNumber.replace(/:/g, '');
-			console.log('订阅', `/resp/wifi-${serialNumber}`);
-			mqttStore.subscribe(`/resp/wifi-${serialNumber}`);
+			let deviceId = deviceTransform(item.serialNumber);
+			console.log('订阅', `/resp/wifi-${deviceId}`);
+			mqttStore.subscribe(`/resp/wifi-${deviceId}`);
 		}
 	});
 }
@@ -475,6 +473,12 @@ function updateSuccess(res) {
 		proxy.$modal.msgError(res.msg || '导入失败！');
 	}
 }
+const deviceTransform = serialNumber => {
+	// 将serialNumber:GF-B4C2E0E6EFDC转换为去掉GF-
+	let deviceId = serialNumber.replace('GF-', '');
+	console.log('🥵 ~ deviceTransform ~ deviceId: ', deviceId);
+	return deviceId;
+};
 getDeptTree();
 onMounted(() => {
 	mqttStore.connect();
