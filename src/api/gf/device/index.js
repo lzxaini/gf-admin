@@ -42,3 +42,11 @@ export function delDevice(id) {
     method: 'delete'
   })
 }
+
+// 获取省市区
+export function getLocationApi() {
+  return request({
+    url: '/common/region',
+    method: 'get'
+  })
+}
