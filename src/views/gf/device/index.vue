@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-09-20 14:56:42
+ * @LastEditTime: 2025-09-22 17:46:49
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -25,6 +25,17 @@
 					<el-select v-model="queryParams.runningState" placeholder="请选择绑定状态" clearable style="width: 200px">
 						<el-option v-for="dict in gf_running_state" :key="dict.value" :label="dict.value == '0' ? '未绑定' : dict.label" :value="dict.value" />
 					</el-select>
+				</el-form-item>
+				<el-form-item label="设备位置" prop="address">
+					<el-cascader
+						v-model="addressQuery"
+						:options="locationData"
+						placeholder="请选择设备位置"
+						clearable
+						style="width: 350px"
+						@change="handleChangeLocation"
+						:props="{ checkStrictly: true, value: 'label', label: 'label', children: 'children' }"
+					/>
 				</el-form-item>
 				<el-form-item>
 					<el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -149,7 +160,7 @@
 </template>
 
 <script setup name="Device">
-import { listDevice, getDevice, delDevice, addDevice, updateDevice } from '@/api/gf/device';
+import { listDevice, getDevice, getLocationApi, addDevice, updateDevice } from '@/api/gf/device';
 import { deptTreeSelect } from '@/api/system/user';
 import deviceImg from '@/assets/images/device.png';
 import { useMQTTStore } from '@/store/modules/useMQTTStore';
@@ -160,6 +171,7 @@ const mqttStore = useMQTTStore();
 const { proxy } = getCurrentInstance();
 const { gf_running_state } = proxy.useDict('gf_running_state');
 
+const addressQuery = ref([]);
 const deviceList = ref([]);
 const open = ref(false);
 const importDialog = ref(false);
@@ -175,16 +187,18 @@ const data = reactive({
 	queryParams: {
 		pageNum: 1,
 		pageSize: 12,
+		address: null,
 		serialNumber: null,
 		runningState: null,
 	},
+	locationData: [],
 	rules: {
 		deviceId: [{ required: true, message: '设备id不能为空', trigger: 'blur' }],
 		serialNumber: [{ required: true, message: '设备识别号不能为空', trigger: 'blur' }],
 	},
 });
 
-const { queryParams, form, rules } = toRefs(data);
+const { queryParams, form, rules, locationData } = toRefs(data);
 
 /** 查询GF设备管理列表 */
 function getList() {
@@ -317,7 +331,7 @@ function handleReset(row) {
 	let { deviceType, serialNumber } = row;
 	// 将serialNumber转换为去掉冒号的mac地址
 	loading.value = true;
-	
+
 	mqttStore.publish(`/req/${serialNumber}`, 'config-get');
 	// 获取设备信息
 	getDeviceInfo(serialNumber)
@@ -347,7 +361,7 @@ function handleReboot(row) {
 	let { deviceType, serialNumber } = row;
 	// 将serialNumber转换为去掉冒号的mac地址
 	loading.value = true;
-	
+
 	mqttStore.publish(`/req/${serialNumber}`, 'config-get');
 	// 获取设备信息
 	getDeviceInfo(serialNumber)
@@ -378,7 +392,7 @@ function handleOTA(row) {
 	// 将serialNumber转换为去掉冒号的mac地址
 	loading.value = true;
 	loadingText.value = '正在进行OTA升级，请稍等...';
-	
+
 	mqttStore.publish(`/req/${serialNumber}`, 'config-get');
 	// 获取设备信息
 	getDeviceInfo(serialNumber)
@@ -472,11 +486,31 @@ function updateSuccess(res) {
 		proxy.$modal.msgError(res.msg || '导入失败！');
 	}
 }
+// 获取省市区
+const getLocation = async () => {
+	try {
+		const res = await getLocationApi();
+		console.log('省市区数据: ', res.data);
+		locationData.value = res.data;
+		// 这里可以根据需要处理返回的数据
+	} catch (error) {
+		console.error('获取省市区失败: ', error);
+	}
+};
+// 选择位置
+const handleChangeLocation = value => {
+	console.log("🥵 ~ handleChangeLocation ~ value: ", value)
+	let address = value.map(item => item).join('/');
+	console.log("🥵 ~ handleChangeLocation ~ address: ", address)
+	queryParams.value.address = address;
+	handleQuery();
+};
 getDeptTree();
 onMounted(() => {
 	mqttStore.connect();
 	nextTick(() => {
 		getList();
+		getLocation();
 	});
 });
 // 页面卸载时断开连接
