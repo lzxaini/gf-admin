@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-09-22 17:46:49
+ * @LastEditTime: 2025-09-23 08:56:40
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -251,6 +251,7 @@ function handleQuery() {
 /** 重置按钮操作 */
 function resetQuery() {
 	proxy.resetForm('queryRef');
+	addressQuery.value = [];
 	handleQuery();
 }
 
