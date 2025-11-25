@@ -34,6 +34,11 @@ export default defineConfig(({ mode, command }) => {
           target: 'http://192.168.254.162:8080',
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/dev-api/, '')
+        },
+        '/mqttapi': {
+          target: 'https://mqtt.guangfkm.cn',
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/mqttapi/, '')
         }
       }
     },
