@@ -16,6 +16,7 @@
 					<div class="client-id">
 						<el-icon><Connection /></el-icon>
 						<span>{{ client.clientid }}</span>
+						<el-tag :type="client.typeColor">{{ client.typeName }}</el-tag>
 					</div>
 					<el-tag :type="client.connected ? 'success' : 'danger'" size="small">
 						{{ client.connected ? '在线' : '离线' }}
@@ -27,7 +28,7 @@
 				<div class="card-body">
 					<div class="info-row">
 						<div class="info-item">
-							<span class="label">用户名</span>
+							<span class="label">连接类型</span>
 							<span class="value">{{ client.username || '-' }}</span>
 						</div>
 						<div class="info-item">
@@ -71,7 +72,7 @@
 
 					<div class="info-row">
 						<div class="info-item full-width">
-							<el-button v-if="client.type === 'wifi'" type="primary" @click="getDeviceConfig(client.clientid)">获取设备信息</el-button>
+							<el-button v-if="client.typeName === 'wifi模块'" type="primary" @click="getDeviceConfig(client.clientid)">获取设备信息</el-button>
 						</div>
 					</div>
 				</div>
@@ -94,6 +95,7 @@
 			</div>
 		</template>
 		<template #footer>
+			<el-button type="danger" style="float: left" @click="handleResetNetwork">重置配网</el-button>
 			<el-button @click="deviceInfoDialog = false">关闭</el-button>
 		</template>
 	</el-dialog>
@@ -114,6 +116,17 @@ let isFirstLoad = true;
 
 const username = 'public';
 const password = 'ByufSsGA96Q:Dd2';
+
+
+/** 客户端类型配置 */
+const CLIENT_TYPES = [
+	{ prefix: 'GFKM-', typeName: 'wifi模块', typeColor: 'warning', needSubscribe: true },
+	{ prefix: 'wx_', typeName: '微信小程序', typeColor: 'success', needSubscribe: false },
+	{ prefix: 'web-', typeName: 'PC管理后台', typeColor: 'primary', needSubscribe: false },
+	{ prefix: 'server-', typeName: '系统服务端', typeColor: 'danger', needSubscribe: false },
+	{ prefix: 'mqttx_', typeName: '调试工具', typeColor: 'info', needSubscribe: false },
+	{ pattern: /^\d{15}$/, typeName: '4G模块', typeColor: 'info', needSubscribe: false }, // IMEI号15位数字
+];
 
 function formatTime(val) {
 	if (!val) return '';
@@ -143,7 +156,7 @@ async function login() {
 		setToken(token);
 		return token;
 	} catch (e) {
-		window.$message?.error?.('登录失败: ' + (e.response?.data?.message || e.message));
+		proxy.$modal.msgError('登录失败: ' + (e.response?.data?.message || e.message));
 		throw e;
 	}
 }
@@ -151,7 +164,7 @@ async function login() {
 // 统一请求方法，自动处理401重登录
 async function requestWithAuth(requestFn) {
 	let token = getToken();
-	
+
 	// 如果没有token，先登录
 	if (!token) {
 		token = await login();
@@ -189,7 +202,7 @@ async function fetchClientList() {
 		tableLoading.value = true;
 	}
 	try {
-		const res = await requestWithAuth(token => 
+		const res = await requestWithAuth(token =>
 			axios.get(
 				'http://mqtt.api.guangfkm.cn/api/v5/clients_v2?limit=100&fields=clientid,username,connected,ip_address,keepalive,connected_at,recv_msg,send_msg,created_at,subscriptions_cnt',
 				{
@@ -203,7 +216,7 @@ async function fetchClientList() {
 		handleSubscribeAll();
 	} catch (e) {
 		console.log('🥵 ~ fetchClientList ~ e: ', e);
-		window.$message?.error?.('获取客户端列表失败: ' + (e.response?.data?.message || e.message));
+		proxy.$modal.msgError('获取客户端列表失败: ' + (e.response?.data?.message || e.message));
 	} finally {
 		if (isFirstLoad) {
 			tableLoading.value = false;
@@ -214,8 +227,10 @@ async function fetchClientList() {
 const deviceInfoDialog = ref(false);
 const deviceInfoData = ref(null);
 const deviceInfoRaw = ref('');
+const currentClientId = ref('');
 
 const getDeviceConfig = async clientId => {
+	currentClientId.value = clientId;
 	tableLoading.value = true;
 	mqttStore.publish(`/req/${clientId}`, 'config-get');
 	try {
@@ -236,6 +251,28 @@ const getDeviceConfig = async clientId => {
 		proxy.$modal.msgError('获取设备信息失败，设备可能离线！');
 	}
 };
+
+/** 重置配网 */
+function handleResetNetwork() {
+	const clientId = currentClientId.value;
+	if (!clientId) {
+		proxy.$modal.msgError('设备ID不存在！');
+		return;
+	}
+	
+	proxy.$modal
+		.confirm(`是否确认重置配网设备编号为"${clientId}"的设备？重置后设备将重启并清除WIFI配置！`)
+		.then(() => {
+			tableLoading.value = true;
+			mqttStore.publish(`/req/${clientId}`, 'network-reset');
+			proxy.$modal.msgSuccess('重置配网指令已发送，请等待设备重启！');
+			deviceInfoDialog.value = false;
+			setTimeout(() => {
+				tableLoading.value = false;
+			}, 2000);
+		})
+		.catch(() => {});
+}
 
 /** 获取设备信息 */
 function getDeviceInfo(serialNumber) {
@@ -258,16 +295,31 @@ function getDeviceInfo(serialNumber) {
 
 /** 订阅所有wifi设备 */
 function handleSubscribeAll() {
-	// 循环订阅所有WIFI设备
 	clientList.value.forEach(item => {
-		// 订阅所有编号为GFKM-开头的设备
-		if (item.clientid.startsWith('GFKM-')) {
-			item.type = 'wifi';
-			if (isFirstLoad) {
+		// 根据clientid前缀或正则匹配类型
+		const clientType = CLIENT_TYPES.find(type => {
+			if (type.prefix) {
+				return item.clientid.startsWith(type.prefix);
+			}
+			if (type.pattern) {
+				return type.pattern.test(item.clientid);
+			}
+			return false;
+		});
+		
+		if (clientType) {
+			item.typeName = clientType.typeName;
+			item.typeColor = clientType.typeColor;
+			
+			// 首次加载且需要订阅的类型才订阅
+			if (isFirstLoad && clientType.needSubscribe) {
 				console.log('订阅', `/resp/${item.clientid}`);
-				// 首次加载后订阅所有WIFI设备
 				mqttStore.subscribe(`/resp/${item.clientid}`);
 			}
+		} else {
+			// 未匹配到类型的默认值
+			item.typeName = '未知类型';
+			item.typeColor = 'info';
 		}
 	});
 }
