@@ -112,8 +112,8 @@ const MQTT_TOKEN_KEY = 'mqtt_api_token';
 let timer = null;
 let isFirstLoad = true;
 
-const username = 'asdasdad';
-const password = 'asdasda';
+const username = 'public';
+const password = 'ByufSsGA96Q:Dd2';
 
 function formatTime(val) {
 	if (!val) return '';
@@ -138,12 +138,46 @@ function clearToken() {
 // 登录获取token
 async function login() {
 	try {
-		const res = await axios.post('/mqttapi/api/v5/login', { username, password });
+		const res = await axios.post('http://mqtt.api.guangfkm.cn/api/v5/login', { username, password });
 		const token = res.data.token;
 		setToken(token);
 		return token;
 	} catch (e) {
 		window.$message?.error?.('登录失败: ' + (e.response?.data?.message || e.message));
+		throw e;
+	}
+}
+
+// 统一请求方法，自动处理401重登录
+async function requestWithAuth(requestFn) {
+	let token = getToken();
+	
+	// 如果没有token，先登录
+	if (!token) {
+		token = await login();
+	}
+
+	try {
+		const res = await requestFn(token);
+		// 检查业务code是否为401
+		if (res.data?.code === 401) {
+			clearToken();
+			throw { isAuth401: true, response: res };
+		}
+		return res;
+	} catch (e) {
+		// 如果是401错误（http状态码或业务code），清除token并重新登录
+		if (e.response?.status === 401 || e.isAuth401) {
+			clearToken();
+			const newToken = await login();
+			// 使用新token重新请求
+			const res = await requestFn(newToken);
+			if (res.data?.code === 401) {
+				clearToken();
+				throw new Error('认证失败');
+			}
+			return res;
+		}
 		throw e;
 	}
 }
@@ -155,45 +189,21 @@ async function fetchClientList() {
 		tableLoading.value = true;
 	}
 	try {
-		let token = getToken();
-
-		// 如果没有token，先登录
-		if (!token) {
-			token = await login();
-		}
-
-		const res = await axios.get(
-			'/mqttapi/api/v5/clients_v2?limit=100&fields=clientid,username,connected,ip_address,keepalive,connected_at,recv_msg,send_msg,created_at,subscriptions_cnt',
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			}
+		const res = await requestWithAuth(token => 
+			axios.get(
+				'http://mqtt.api.guangfkm.cn/api/v5/clients_v2?limit=100&fields=clientid,username,connected,ip_address,keepalive,connected_at,recv_msg,send_msg,created_at,subscriptions_cnt',
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				}
+			)
 		);
 		clientList.value = res.data.data || [];
 		handleSubscribeAll();
 	} catch (e) {
-		// 如果是401错误，清除token并重新登录
-		if (e.response?.status === 401) {
-			clearToken();
-			try {
-				const newToken = await login();
-				// 重新请求
-				const res = await axios.get(
-					'/mqttapi/api/v5/clients_v2?limit=100&fields=clientid,username,connected,ip_address,keepalive,connected_at,recv_msg,send_msg,created_at,subscriptions_cnt',
-					{
-						headers: {
-							Authorization: newToken,
-						},
-					}
-				);
-				clientList.value = res.data.data || [];
-			} catch (retryError) {
-				window.$message?.error?.('获取客户端列表失败: ' + (retryError.response?.data?.message || retryError.message));
-			}
-		} else {
-			window.$message?.error?.('获取客户端列表失败: ' + (e.response?.data?.message || e.message));
-		}
+		console.log('🥵 ~ fetchClientList ~ e: ', e);
+		window.$message?.error?.('获取客户端列表失败: ' + (e.response?.data?.message || e.message));
 	} finally {
 		if (isFirstLoad) {
 			tableLoading.value = false;
