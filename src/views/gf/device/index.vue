@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-09-23 08:56:40
+ * @LastEditTime: 2025-11-26 11:11:55
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -12,8 +12,11 @@
 		<el-card>
 			<el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="100px">
 				<el-form-item label="设备识别号" prop="serialNumber">
-					<el-input v-model="queryParams.serialNumber" placeholder="请输入设备识别号" clearable @keyup.enter="handleQuery" />
+					<el-input v-model="queryParams.serialNumber" placeholder="请输入设备识别号" clearable @keyup.enter="handleQuery" style="width: 100%" />
 				</el-form-item>
+				<!-- <el-form-item label="部门名称" prop="deptName">
+					<el-input v-model="queryParams.deptName" placeholder="请输入部门名称" clearable @keyup.enter="handleQuery" style="width: 100%" />
+				</el-form-item> -->
 				<!-- <el-form-item label="运行状态" prop="status">
 					<el-select v-model="queryParams.status" placeholder="请选择运行状态" clearable style="width: 200px;">
 						<el-option key="1" label="未激活" :value="1" />
@@ -22,7 +25,7 @@
 					</el-select>
 				</el-form-item> -->
 				<el-form-item label="绑定状态" prop="runningState">
-					<el-select v-model="queryParams.runningState" placeholder="请选择绑定状态" clearable style="width: 200px">
+					<el-select v-model="queryParams.runningState" placeholder="请选择绑定状态" clearable style="width: 100%; min-width: 200px">
 						<el-option v-for="dict in gf_running_state" :key="dict.value" :label="dict.value == '0' ? '未绑定' : dict.label" :value="dict.value" />
 					</el-select>
 				</el-form-item>
@@ -32,7 +35,7 @@
 						:options="locationData"
 						placeholder="请选择设备位置"
 						clearable
-						style="width: 350px"
+						style="width: 100%; min-width: 280px"
 						@change="handleChangeLocation"
 						:props="{ checkStrictly: true, value: 'label', label: 'label', children: 'children' }"
 					/>
@@ -103,12 +106,12 @@
 								<el-image class="device_image" :src="deviceImg" fit="cover"></el-image>
 							</el-col>
 						</el-row>
-						<el-button-group>
-							<el-button type="primary" size="mini" icon="edit" @click="handleUpdate(item)" v-hasPermi="['gf:device:edit']">绑定</el-button>
-							<el-button v-if="item.deviceType == 'WIFI'" type="danger" size="mini" @click="handleReset(item)" v-hasPermi="['gf:device:remove']">重置配网</el-button>
-							<el-button v-if="item.deviceType == 'WIFI'" type="info" size="mini" @click="handleReboot(item)" v-hasPermi="['gf:device:remove']">重启设备</el-button>
-							<el-button v-if="item.deviceType == 'WIFI'" type="success" size="mini" @click="handleOTA(item)" v-hasPermi="['gf:device:remove']">OTA</el-button>
-							<el-button type="warning" size="mini" icon="delete" @click="handleBind(item)" v-hasPermi="['gf:device:remove']">解绑</el-button>
+						<el-button-group style="display: flex; flex-wrap: wrap; gap: 5px">
+							<el-button type="primary" size="small" icon="edit" @click="handleUpdate(item)" v-hasPermi="['gf:device:edit']">绑定</el-button>
+							<el-button v-if="item.deviceType == 'WIFI'" type="danger" size="small" @click="handleReset(item)" v-hasPermi="['gf:device:remove']">重置配网</el-button>
+							<el-button v-if="item.deviceType == 'WIFI'" type="info" size="small" @click="handleReboot(item)" v-hasPermi="['gf:device:remove']">重启</el-button>
+							<el-button v-if="item.deviceType == 'WIFI'" type="success" size="small" @click="handleOTA(item)" v-hasPermi="['gf:device:remove']">OTA</el-button>
+							<el-button type="warning" size="small" icon="delete" @click="handleBind(item)" v-hasPermi="['gf:device:remove']">解绑</el-button>
 						</el-button-group>
 					</el-card>
 				</el-col>
@@ -119,8 +122,8 @@
 		<pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" :pageSizes="[12, 24, 36, 60]" @pagination="getList" />
 
 		<!-- 添加或修改GF设备管理对话框 -->
-		<el-dialog :title="title" v-model="open" width="20%" append-to-body align-center style="margin-top: auto !important">
-			<el-form ref="deviceRef" :model="form" :rules="rules" label-width="80px">
+		<el-dialog :title="title" v-model="open" :width="isMobile ? '90%' : '20%'" append-to-body align-center style="margin-top: auto !important">
+			<el-form ref="deviceRef" :model="form" :rules="rules" :label-width="isMobile ? '70px' : '80px'">
 				<el-form-item label="绑定部门" prop="deptId">
 					<el-tree-select
 						v-model="form.deptId"
@@ -129,6 +132,7 @@
 						value-key="id"
 						placeholder="请选择归属部门"
 						check-strictly
+						style="width: 100%"
 					/>
 				</el-form-item>
 			</el-form>
@@ -139,7 +143,7 @@
 				</div>
 			</template>
 		</el-dialog>
-		<el-dialog title="导入设备" v-model="importDialog" width="20%" append-to-body align-center style="margin-top: auto !important">
+		<el-dialog title="导入设备" v-model="importDialog" :width="isMobile ? '90%' : '20%'" append-to-body align-center style="margin-top: auto !important">
 			<fileUpload
 				ref="file-upload"
 				:value="filePath"
@@ -181,6 +185,7 @@ const showSearch = ref(true);
 const total = ref(0);
 const title = ref('');
 const deptOptions = ref(undefined);
+const isMobile = ref(false);
 
 const data = reactive({
 	form: {},
@@ -189,6 +194,7 @@ const data = reactive({
 		pageSize: 12,
 		address: null,
 		serialNumber: null,
+		// deptName: null,
 		runningState: null,
 	},
 	locationData: [],
@@ -506,8 +512,16 @@ const handleChangeLocation = value => {
 	queryParams.value.address = address;
 	handleQuery();
 };
+
+// 检测是否为移动端
+function checkMobile() {
+	isMobile.value = window.innerWidth <= 768;
+}
+
 getDeptTree();
 onMounted(() => {
+	checkMobile();
+	window.addEventListener('resize', checkMobile);
 	mqttStore.connect();
 	nextTick(() => {
 		getList();
@@ -516,11 +530,136 @@ onMounted(() => {
 });
 // 页面卸载时断开连接
 onBeforeUnmount(() => {
+	window.removeEventListener('resize', checkMobile);
 	mqttStore.disconnect();
 });
 </script>
 <style lang="scss">
 .device_image {
 	width: 150px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+	.app-container {
+		padding: 8px !important;
+	}
+	
+	.el-card {
+		margin-top: 10px !important;
+		margin-bottom: 10px !important;
+	}
+	
+	.el-card__body {
+		padding: 12px !important;
+	}
+	
+	.el-form--inline .el-form-item {
+		display: block;
+		margin-right: 0;
+		margin-bottom: 12px;
+	}
+	
+	.el-form-item__label {
+		// width: 100% !important;
+		text-align: left !important;
+		padding: 0 !important;
+		margin-bottom: 5px;
+	}
+	
+	.el-form-item__content {
+		margin-left: 0 !important;
+	}
+	
+	.el-row.mb8 {
+		margin-bottom: 8px !important;
+	}
+	
+	.el-col {
+		margin-bottom: 8px;
+	}
+	
+	.el-button {
+		padding: 8px 12px;
+		font-size: 13px;
+	}
+	
+	.el-button-group {
+		justify-content: center;
+		width: 100%;
+	}
+	
+	.el-button + .el-button {
+		margin-left: 0;
+	}
+	
+	.device_image {
+		width: 80px;
+	}
+	
+	.el-descriptions {
+		font-size: 12px !important;
+	}
+	
+	.el-descriptions__label,
+	.el-descriptions__content {
+		font-size: 11px !important;
+		padding: 6px 8px !important;
+	}
+	
+	.el-tag {
+		font-size: 11px !important;
+		padding: 2px 6px;
+	}
+	
+	/* 顶部标题栏优化 */
+	.el-card .el-row {
+		flex-wrap: wrap;
+	}
+	
+	svg-icon {
+		font-size: 14px;
+	}
+	
+	/* 分页器优化 */
+	.pagination-container {
+		padding: 10px !important;
+	}
+	
+	.el-pagination {
+		text-align: center;
+	}
+	
+	.el-pagination .el-select .el-input {
+		width: 90px !important;
+	}
+	
+	/* 弹窗适配 */
+	.el-dialog__body {
+		padding: 15px !important;
+	}
+	
+	.el-form-item {
+		margin-bottom: 15px;
+	}
+	
+	.el-tree-select {
+		font-size: 13px;
+	}
+	
+	.el-dialog__footer {
+		padding: 10px 15px !important;
+	}
+	
+	.dialog-footer {
+		display: flex;
+		justify-content: center;
+		gap: 10px;
+	}
+	
+	.dialog-footer .el-button {
+		flex: 1;
+		max-width: 120px;
+	}
 }
 </style>

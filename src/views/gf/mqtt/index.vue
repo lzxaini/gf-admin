@@ -82,7 +82,7 @@
 		<el-empty v-if="!tableLoading && clientList.length === 0" description="暂无在线客户端" />
 	</div>
 
-	<el-dialog v-model="deviceInfoDialog" title="设备信息" width="500px" :close-on-click-modal="false">
+	<el-dialog v-model="deviceInfoDialog" title="设备信息" :width="isMobile ? '90%' : '20%'" :close-on-click-modal="false">
 		<template #default>
 			<div v-if="deviceInfoData">
 				<pre style="background: #f6f8fa; padding: 12px; border-radius: 6px; overflow: auto; max-height: 400px"
@@ -113,6 +113,8 @@ const clientList = ref([]);
 const MQTT_TOKEN_KEY = 'mqtt_api_token';
 let timer = null;
 let isFirstLoad = true;
+
+const isMobile = ref(false);
 
 const username = 'public';
 const password = 'ByufSsGA96Q:Dd2';
@@ -323,7 +325,13 @@ function handleSubscribeAll() {
 		}
 	});
 }
+// 检测是否为移动端
+function checkMobile() {
+	isMobile.value = window.innerWidth <= 768;
+}
 onMounted(() => {
+	checkMobile()
+	window.addEventListener('resize', checkMobile);
 	mqttStore.connect();
 	// 监听MQTT连接成功后再加载列表
 	const stopWatch = watch(
@@ -342,6 +350,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+	window.removeEventListener('resize', checkMobile);
 	mqttStore.disconnect();
 	// 组件卸载时清除定时器
 	if (timer) {
