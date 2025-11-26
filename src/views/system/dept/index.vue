@@ -65,32 +65,32 @@
       </el-table>
 
       <!-- 添加或修改部门对话框 -->
-      <el-dialog :title="title" v-model="open" width="600px" append-to-body>
-         <el-form ref="deptRef" :model="form" :rules="rules" label-width="80px">
+      <el-dialog :title="title" v-model="open" :width="isMobile ? '95%' : '600px'" append-to-body>
+         <el-form ref="deptRef" :model="form" :rules="rules" :label-width="isMobile ? '70px' : '80px'">
             <el-row>
                <el-col :span="24" v-if="form.parentId !== 0 && title !== '修改部门'">
                   <el-form-item label="上级部门" prop="parentId">
                      <el-tree-select v-model="form.parentId" :data="deptOptions"
                         :props="{ value: 'deptId', label: 'deptName', children: 'children' }" value-key="deptId"
-                        placeholder="选择上级部门" check-strictly :disabled="true" />
+                        placeholder="选择上级部门" check-strictly :disabled="true" style="width: 100%" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item label="部门名称" prop="deptName">
                      <el-input v-model="form.deptName" placeholder="请输入部门名称" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12" v-if="deptType != 4 && title !== '修改部门'">
+               <el-col :xs="24" :sm="12" v-if="deptType != 4 && title !== '修改部门'">
                   <el-form-item label="部门分类" prop="deptType">
-                     <el-select v-model="form.deptType" placeholder="请选择部门分类" clearable>
+                     <el-select v-model="form.deptType" placeholder="请选择部门分类" clearable style="width: 100%">
                         <el-option v-for="dict in gf_dept_type" :key="dict.value" :label="dict.label"
                            :value="dict.value" :disabled="Number(dict.value) <= Number(deptType)" />
                      </el-select>
                   </el-form-item>
                </el-col>
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item label="显示排序" prop="orderNum">
-                     <el-input-number v-model="form.orderNum" controls-position="right" :min="0" />
+                     <el-input-number v-model="form.orderNum" controls-position="right" :min="0" style="width: 100%" />
                   </el-form-item>
                </el-col>
                <!-- <el-col :span="12" v-if="title !== '修改部门'">
@@ -98,12 +98,12 @@
                      <el-input v-model="form.leader" placeholder="请输入负责人" maxlength="20" :disabled="true" />
                   </el-form-item>
                </el-col> -->
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item label="联系电话" prop="phone">
                      <el-input v-model="form.phone" placeholder="请输入联系电话" maxlength="11" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item label="邮箱" prop="email">
                      <el-input v-model="form.email" placeholder="请输入邮箱" maxlength="50" />
                   </el-form-item>
@@ -140,17 +140,17 @@
          </template>
       </el-dialog>
 
-      <el-dialog title="充值点数" v-model="rechargeOpen" width="600px" append-to-body>
-         <el-form label-width="100" style="margin: 20px 0;">
+      <el-dialog title="充值点数" v-model="rechargeOpen" :width="isMobile ? '95%' : '600px'" append-to-body>
+         <el-form :label-width="isMobile ? '80px' : '100px'" style="margin: 20px 0;" v-if="rechargeInfo">
             <el-row>
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item label="部门">
                      <el-input v-model="rechargeInfo.deptName" :disabled="true" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item label="充值点数">
-                     <el-input-number v-model="rechargeAmount" placeholder="请输入充值点数" />
+                     <el-input-number v-model="rechargeAmount" placeholder="请输入充值点数" style="width: 100%" />
                   </el-form-item>
                </el-col>
             </el-row>
@@ -206,6 +206,13 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
+
+const isMobile = ref(false);
+
+// 检测是否为移动端
+function checkMobile() {
+   isMobile.value = window.innerWidth <= 768;
+}
 
 /** 查询部门列表 */
 function getList() {
@@ -343,5 +350,113 @@ function rechargeClose(row) {
    rechargeInfo.value = null
    rechargeOpen.value = false
 }
+
+onMounted(() => {
+   checkMobile();
+   window.addEventListener('resize', checkMobile);
+});
+
+onBeforeUnmount(() => {
+   window.removeEventListener('resize', checkMobile);
+});
+
 getList();
 </script>
+
+<style lang="scss" scoped>
+/* 移动端适配 */
+@media (max-width: 768px) {
+   .app-container {
+      padding: 8px !important;
+   }
+   
+   /* 表单项垂直排列 */
+   .el-form--inline .el-form-item {
+      display: block;
+      margin-right: 0;
+      margin-bottom: 12px;
+   }
+   
+   .el-form-item__label {
+      width: 100% !important;
+      text-align: left !important;
+      padding: 0 !important;
+      margin-bottom: 5px;
+   }
+   
+   .el-form-item__content {
+      margin-left: 0 !important;
+   }
+   
+   /* 按钮优化 */
+   .el-button {
+      padding: 8px 12px;
+      font-size: 13px;
+      margin-bottom: 5px;
+   }
+   
+   .el-row.mb8 {
+      margin-bottom: 8px !important;
+   }
+   
+   .el-col {
+      margin-bottom: 8px;
+   }
+   
+   /* 表格优化 */
+   .el-table {
+      font-size: 12px;
+   }
+   
+   .el-table th,
+   .el-table td {
+      padding: 8px 0;
+   }
+   
+   /* 弹窗优化 */
+   .el-dialog__body {
+      padding: 15px !important;
+   }
+   
+   .el-dialog__footer {
+      padding: 10px 15px !important;
+   }
+   
+   .dialog-footer {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+   }
+   
+   .dialog-footer .el-button {
+      flex: 1;
+      max-width: 120px;
+   }
+   
+   /* 表单项间距 */
+   .el-form .el-row {
+      margin-bottom: 0;
+   }
+   
+   .el-form .el-col {
+      margin-bottom: 10px;
+   }
+   
+   /* 标签优化 */
+   .el-tag {
+      font-size: 11px !important;
+      padding: 2px 6px;
+   }
+   
+   .el-select,
+   .el-tree-select,
+   .el-input {
+      width: 100% !important;
+   }
+   
+   /* 输入数字框优化 */
+   .el-input-number {
+      width: 100% !important;
+   }
+}
+</style>

@@ -143,36 +143,36 @@
       </el-row>
 
       <!-- 添加或修改用户配置对话框 -->
-      <el-dialog :title="title" v-model="open" width="600px" append-to-body>
-         <el-form :model="form" :rules="rules" ref="userRef" label-width="100px">
+      <el-dialog :title="title" v-model="open" :width="isMobile ? '95%' : '600px'" append-to-body>
+         <el-form :model="form" :rules="rules" ref="userRef" :label-width="isMobile ? '80px' : '100px'">
             <el-row>
                <!-- <el-col :span="12">
                   <el-form-item label="用户昵称" prop="nickName">
                      <el-input v-model="form.nickName" placeholder="请输入用户昵称" maxlength="30" />
                   </el-form-item>
                </el-col> -->
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item label="用户名称" prop="userName">
                      <el-input v-model="form.userName" placeholder="请输入用户名称" maxlength="30" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item label="归属部门" prop="deptId">
                      <el-tree-select v-model="form.deptId" :data="deptOptions"
                         :props="{ value: 'id', label: 'label', children: 'children' }" value-key="id"
-                        placeholder="请选择归属部门" check-strictly />
+                        placeholder="请选择归属部门" check-strictly style="width: 100%" />
                   </el-form-item>
                </el-col>
             </el-row>
             <el-row>
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item label="手机号码" prop="phonenumber">
                      <el-input v-model="form.phonenumber" placeholder="请输入手机号码" maxlength="11" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item label="角色">
-                     <el-select v-model="form.roleIds[0]" placeholder="请选择">
+                     <el-select v-model="form.roleIds[0]" placeholder="请选择" style="width: 100%">
                         <el-option v-for="item in roleOptions" :key="item.roleId" :label="item.roleName"
                            :value="item.roleId" :disabled="item.status == 1"></el-option>
                      </el-select>
@@ -185,7 +185,7 @@
                </el-col> -->
             </el-row>
             <el-row>
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item v-if="form.userId == undefined" label="用户密码" prop="password">
                      <el-input v-model="form.password" placeholder="请输入用户密码" type="password" maxlength="20"
                         show-password />
@@ -211,24 +211,24 @@
                      </el-select>
                   </el-form-item>
                </el-col> -->
-               <el-col :span="8">
+               <el-col :xs="24" :sm="8">
                   <el-form-item label="白名单权限">
                      <el-switch v-model="form.allowedWhite" :active-value="true" :inactive-value="false"></el-switch>
                   </el-form-item>
                </el-col>
-               <el-col :span="8">
+               <el-col :xs="24" :sm="8">
                   <el-form-item label="充值权限">
                      <el-switch v-model="form.allowedRecharge" :active-value="true" :inactive-value="false"></el-switch>
                   </el-form-item>
                </el-col>
-               <el-col :span="8">
+               <el-col :xs="24" :sm="8">
                   <el-form-item label="共享权限">
                      <el-switch v-model="form.allowedShare" :active-value="true" :inactive-value="false"></el-switch>
                   </el-form-item>
                </el-col>
             </el-row>
             <el-row>
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item label="状态">
                      <el-radio-group v-model="form.status">
                         <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
@@ -236,7 +236,7 @@
                      </el-radio-group>
                   </el-form-item>
                </el-col>
-               <el-col :span="12">
+               <el-col :xs="24" :sm="12">
                   <el-form-item label="备注">
                      <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
                   </el-form-item>
@@ -252,7 +252,7 @@
       </el-dialog>
 
       <!-- 用户导入对话框 -->
-      <el-dialog :title="upload.title" v-model="upload.open" width="400px" append-to-body>
+      <el-dialog :title="upload.title" v-model="upload.open" :width="isMobile ? '95%' : '400px'" append-to-body>
          <el-upload ref="uploadRef" :limit="1" accept=".xlsx, .xls" :headers="upload.headers"
             :action="upload.url + '?updateSupport=' + upload.updateSupport" :disabled="upload.isUploading"
             :on-progress="handleFileUploadProgress" :on-success="handleFileSuccess" :auto-upload="false" drag>
@@ -348,6 +348,13 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
+
+const isMobile = ref(false);
+
+// 检测是否为移动端
+function checkMobile() {
+   isMobile.value = window.innerWidth <= 768;
+}
 
 /** 通过条件过滤节点  */
 const filterNode = (value, data) => {
@@ -559,4 +566,149 @@ function submitForm() {
 
 getDeptTree();
 getList();
+
+onMounted(() => {
+   checkMobile();
+   window.addEventListener('resize', checkMobile);
+});
+
+onBeforeUnmount(() => {
+   window.removeEventListener('resize', checkMobile);
+});
 </script>
+
+<style lang="scss" scoped>
+/* 移动端适配 */
+@media (max-width: 768px) {
+   .app-container {
+      padding: 8px !important;
+   }
+   
+   /* 部门树在移动端隐藏或可折叠 */
+   .el-col:first-child {
+      margin-bottom: 15px;
+   }
+   
+   .el-card {
+      margin-bottom: 10px;
+   }
+   
+   /* 表单项垂直排列 */
+   .el-form--inline .el-form-item {
+      display: block;
+      margin-right: 0;
+      margin-bottom: 12px;
+   }
+   
+   .el-form-item__label {
+      width: 100% !important;
+      text-align: left !important;
+      padding: 0 !important;
+      margin-bottom: 5px;
+   }
+   
+   .el-form-item__content {
+      margin-left: 0 !important;
+   }
+   
+   /* 按钮优化 */
+   .el-button {
+      padding: 8px 12px;
+      font-size: 13px;
+      margin-bottom: 5px;
+   }
+   
+   .el-row.mb8 {
+      margin-bottom: 8px !important;
+   }
+   
+   .el-col {
+      margin-bottom: 8px;
+   }
+   
+   /* 表格优化 */
+   .el-table {
+      font-size: 12px;
+   }
+   
+   .el-table th,
+   .el-table td {
+      padding: 8px 0;
+   }
+   
+   /* 弹窗优化 */
+   .el-dialog__body {
+      padding: 15px !important;
+   }
+   
+   .el-dialog__footer {
+      padding: 10px 15px !important;
+   }
+   
+   .dialog-footer {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+   }
+   
+   .dialog-footer .el-button {
+      flex: 1;
+      max-width: 120px;
+   }
+   
+   /* 表单项间距 */
+   .el-form .el-row {
+      margin-bottom: 0;
+   }
+   
+   .el-form .el-col {
+      margin-bottom: 10px;
+   }
+   
+   /* 标签和选择器优化 */
+   .el-tag {
+      font-size: 11px !important;
+      padding: 2px 6px;
+   }
+   
+   .el-select,
+   .el-tree-select,
+   .el-input,
+   .el-date-picker {
+      width: 100% !important;
+   }
+   
+   /* 分页器优化 */
+   .pagination-container {
+      padding: 10px !important;
+   }
+   
+   .el-pagination {
+      text-align: center;
+   }
+   
+   .el-pagination .el-select .el-input {
+      width: 90px !important;
+   }
+   
+   /* 部门树优化 */
+   .head-container {
+      margin-bottom: 10px;
+   }
+   
+   .el-tree {
+      font-size: 13px;
+   }
+   
+   /* 搜索表单项宽度调整 */
+   .el-form-item {
+      width: 100%;
+   }
+   
+   .el-form-item .el-input,
+   .el-form-item .el-select,
+   .el-form-item .el-date-picker {
+      width: 100% !important;
+   }
+}
+</style>

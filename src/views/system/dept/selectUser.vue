@@ -9,7 +9,7 @@
 -->
 <template>
    <!-- 授权用户 -->
-   <el-dialog title="选择用户" v-model="visible" width="800px" top="5vh" append-to-body>
+   <el-dialog title="选择用户" v-model="visible" :width="isMobile ? '95%' : '800px'" top="5vh" append-to-body>
       <el-form :model="queryParams" ref="queryRef" :inline="true">
          <el-form-item label="用户名称" prop="userName">
             <el-input v-model="queryParams.userName" placeholder="请输入用户名称" clearable style="width: 200px"
@@ -75,9 +75,15 @@ const { sys_normal_disable } = proxy.useDict("sys_normal_disable");
 const userList = ref([]);
 const visible = ref(false);
 const total = ref(0);
+const isMobile = ref(false);
 
 const selectedUserId = ref(null); // 单选ID
 const selectedUser = ref(null); // 单选行数据
+
+// 检测是否为移动端
+function checkMobile() {
+   isMobile.value = window.innerWidth <= 768;
+}
 
 const queryParams = reactive({
    pageNum: 1,
@@ -142,8 +148,96 @@ function handleSelectUser() {
    emit("setUserInfo", userInfo);
 }
 
+onMounted(() => {
+   checkMobile();
+   window.addEventListener('resize', checkMobile);
+});
+
+onBeforeUnmount(() => {
+   window.removeEventListener('resize', checkMobile);
+});
+
 defineExpose({
    show,
    hide
 });
 </script>
+
+<style lang="scss" scoped>
+/* 移动端适配 */
+@media (max-width: 768px) {
+   /* 表单项垂直排列 */
+   .el-form--inline .el-form-item {
+      display: block;
+      margin-right: 0;
+      margin-bottom: 12px;
+   }
+   
+   .el-form-item__label {
+      width: 100% !important;
+      text-align: left !important;
+      padding: 0 !important;
+      margin-bottom: 5px;
+   }
+   
+   .el-form-item__content {
+      margin-left: 0 !important;
+   }
+   
+   /* 按钮优化 */
+   .el-button {
+      padding: 8px 12px;
+      font-size: 13px;
+      margin-bottom: 5px;
+   }
+   
+   /* 表格优化 */
+   .el-table {
+      font-size: 12px;
+   }
+   
+   .el-table th,
+   .el-table td {
+      padding: 8px 0;
+   }
+   
+   /* 弹窗优化 */
+   .el-dialog__body {
+      padding: 15px !important;
+   }
+   
+   .el-dialog__footer {
+      padding: 10px 15px !important;
+   }
+   
+   .dialog-footer {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+   }
+   
+   .dialog-footer .el-button {
+      flex: 1;
+      max-width: 120px;
+   }
+   
+   /* 标签优化 */
+   .el-tag {
+      font-size: 11px !important;
+      padding: 2px 6px;
+   }
+   
+   .el-input {
+      width: 100% !important;
+   }
+   
+   /* 分页器优化 */
+   .el-pagination {
+      text-align: center;
+   }
+   
+   .el-pagination .el-select .el-input {
+      width: 90px !important;
+   }
+}
+</style>
