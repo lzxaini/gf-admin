@@ -50,3 +50,12 @@ export function getLocationApi() {
     method: 'get'
   })
 }
+/**
+ * 绑定设备
+ */
+export function deviceBindApi(deptId, serialNumber) {
+  return request({
+    url: `/gf/device/bind/${deptId}/${serialNumber}`,
+    method: 'get',
+  })
+}
