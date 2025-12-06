@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-09 09:36:21
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-12-06 13:54:14
+ * @LastEditTime: 2025-12-06 14:20:09
  * @FilePath: \ryv3\src\views\gf\teamJoinRequests\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -56,7 +56,7 @@
 		<pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
 		<!-- 添加或审批团队加入申请对话框 -->
-		<el-dialog :title="title" v-model="open" width="500px" append-to-body align-center style="margin-top: auto !important">
+		<el-dialog :title="title" v-model="open" width="20%" append-to-body align-center style="margin-top: auto !important" :show-close="false" :close-on-click-modal="false" :close-on-press-escape="false">
 			<el-form ref="teamJoinRequestsRef" :model="form" :rules="rules" label-width="80px">
 				<el-form-item label="申请状态" prop="status">
 					<el-select v-model="form.status" placeholder="请选择申请状态">
@@ -75,8 +75,8 @@
 			</el-form>
 			<template #footer>
 				<div class="dialog-footer">
-					<el-button type="primary" @click="submitForm">确 定</el-button>
-					<el-button @click="cancel">取 消</el-button>
+					<el-button :loading="dialogLoading" type="primary" @click="submitForm">确 定</el-button>
+					<el-button :loading="dialogLoading" @click="cancel">取 消</el-button>
 				</div>
 			</template>
 		</el-dialog>
@@ -101,6 +101,7 @@ const title = ref('');
 const roleOptions = ref([]);
 const roleIds = ref([]); // 选择的角色列表
 let originRoleIds = []; // 原始角色列表，用于对比是否修改了角色
+const dialogLoading = ref(false);
 
 const data = reactive({
 	form: {},
@@ -195,6 +196,7 @@ function submitForm() {
 	proxy.$refs['teamJoinRequestsRef'].validate(valid => {
 		if (valid) {
 			if (form.value.id != null) {
+				dialogLoading.value = true;
 				// 如果审批通过且修改了角色，则更新用户角色
 				if (form.value.status == 1 && JSON.stringify(originRoleIds) !== JSON.stringify(roleIds.value)) {
 					const params = {
@@ -213,6 +215,7 @@ function submitForm() {
 					agreeJoinTeam('update');
 				}
 			} else {
+				dialogLoading.value = false;
 				proxy.$modal.msgError('审批失败！');
 			}
 		}
@@ -224,16 +227,19 @@ function agreeJoinTeam(type) {
 		.then(response => {
 			if (response.code === 200) {
 				proxy.$modal.msgSuccess(type === 'update' ? '审批成功！' : '审批成功并已分配角色！');
-        open.value = false;
-        getList()
+				open.value = false;
+				dialogLoading.value = false;
+				getList();
 			} else {
 				proxy.$modal.msgError(response.msg || '审批失败！');
 				open.value = false;
+				dialogLoading.value = false;
 			}
 		})
 		.catch(() => {
 			proxy.$modal.msgError('审批失败！');
 			open.value = false;
+			dialogLoading.value = false;
 		});
 }
 /** 导出按钮操作 */
