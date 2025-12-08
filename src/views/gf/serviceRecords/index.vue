@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-08 17:33:14
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-08-14 14:33:22
+ * @LastEditTime: 2025-12-08 08:07:08
  * @FilePath: \ryv3\src\views\gf\serviceRecords\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -15,6 +15,9 @@
       </el-form-item>
       <el-form-item label="设备识别号" prop="serialNumber">
         <el-input v-model="queryParams.serialNumber" placeholder="请输入设备识别号" clearable @keyup.enter="handleQuery" />
+      </el-form-item>
+      <el-form-item label="设备部门" prop="deptName">
+        <el-input v-model="queryParams.deptName" placeholder="请输入设备部门" clearable @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -74,6 +77,7 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 10,
+    deptName: null,
     code: null,
     serialNumber: null,
     status: null,
@@ -108,7 +112,7 @@ function resetQuery() {
 function handleExport() {
   proxy.download('gf/serviceRecords/export', {
     ...queryParams.value
-  }, `serviceRecords_${new Date().getTime()}.xlsx`)
+  }, `${queryParams.value.deptName || '全部'}_服务记录_${new Date().getTime()}.xlsx`)
 }
 
 getList();
