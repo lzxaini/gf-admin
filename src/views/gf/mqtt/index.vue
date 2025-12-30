@@ -151,7 +151,7 @@ function clearToken() {
 // 登录获取token
 async function login() {
 	try {
-		const res = await axios.post('http://mqtt.api.guangfkm.cn/api/v5/login', { username, password });
+		const res = await axios.post('http://mqtt.api.gfkm.cc/api/v5/login', { username, password });
 		const token = res.data.token;
 		setToken(token);
 		return token;
