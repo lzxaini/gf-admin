@@ -36,9 +36,9 @@
     <!--  底部  -->
     <div class="el-login-footer">
       <span style="display: block;">
-        <a href="https://beian.miit.gov.cn" target="_blank">粤ICP备2025444193号</a>
+        <a href="https://beian.miit.gov.cn" target="_blank">粤ICP备2025513760号-2</a>
       </span>
-      <span style="display: block;margin-top: 10px;">Copyright © 2020-2024 guangfkm.cn All Rights Reserved.</span>
+      <span style="display: block;margin-top: 10px;">Copyright © 2020-2026 gfkm.cc All Rights Reserved.</span>
     </div>
   </div>
 </template>
