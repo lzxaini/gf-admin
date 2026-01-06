@@ -123,7 +123,7 @@ const CLIENT_TYPES = [
 	{ prefix: 'GFKM-', typeName: 'wifi模块', typeColor: 'warning', needSubscribe: true },
 	{ prefix: 'wx_', typeName: '微信小程序', typeColor: 'success', needSubscribe: false },
 	{ prefix: 'web-', typeName: 'PC管理后台', typeColor: 'primary', needSubscribe: false },
-	{ prefix: 'server-', typeName: '系统服务端', typeColor: 'danger', needSubscribe: false },
+	{ prefix: 'server_km', typeName: '系统服务端', typeColor: 'danger', needSubscribe: false },
 	{ prefix: 'mqttx_', typeName: '调试工具', typeColor: 'info', needSubscribe: false },
 	{ pattern: /^\d{15}$/, typeName: '4G模块', typeColor: 'info', needSubscribe: false }, // IMEI号15位数字
 ];
