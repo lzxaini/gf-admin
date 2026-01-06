@@ -73,6 +73,7 @@
 					<div class="info-row">
 						<div class="info-item full-width">
 							<el-button v-if="client.typeName === 'wifi模块'" type="primary" @click="getDeviceConfig(client.clientid)">获取设备信息</el-button>
+							<el-button v-if="client.typeName === '4G模块'" type="success" @click="open4GDialog(client.clientid)">4G通信</el-button>
 						</div>
 					</div>
 				</div>
@@ -99,10 +100,14 @@
 			<el-button @click="deviceInfoDialog = false">关闭</el-button>
 		</template>
 	</el-dialog>
+
+	<!-- 4G模块通信对话框 -->
+	<FourGDialog v-model="fourGDialogVisible" :client-id="current4GClientId" />
 </template>
 
 <script setup>
 import { useMQTTStore } from '@/store/modules/useMQTTStore';
+import FourGDialog from './4G.vue';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
@@ -113,6 +118,10 @@ const clientList = ref([]);
 const MQTT_TOKEN_KEY = 'mqtt_api_token';
 let timer = null;
 let isFirstLoad = true;
+
+// 4G对话框相关
+const fourGDialogVisible = ref(false);
+const current4GClientId = ref('');
 
 const username = 'public';
 const password = 'ByufSsGA96Q:Dd2';
@@ -272,6 +281,12 @@ function handleResetNetwork() {
 			}, 2000);
 		})
 		.catch(() => {});
+}
+
+/** 打开4G通信对话框 */
+function open4GDialog(clientId) {
+	current4GClientId.value = clientId;
+	fourGDialogVisible.value = true;
 }
 
 /** 获取设备信息 */
