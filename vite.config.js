@@ -36,7 +36,7 @@ export default defineConfig(({ mode, command }) => {
           rewrite: (p) => p.replace(/^\/dev-api/, '')
         },
         '/mqttapi': {
-          target: 'https://mqtt.guangfkm.cn',
+          target: 'https://mqtt.gfkm.cc',
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/mqttapi/, '')
         }
