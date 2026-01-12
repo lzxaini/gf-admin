@@ -71,9 +71,9 @@
 					</div>
 
 					<div class="info-row">
-						<div class="info-item full-width" style="display: flex; gap: 8px">
+						<div class="info-item full-width">
 							<el-button v-if="client.typeName === 'wifi模块'" type="primary" @click="getDeviceConfig(client.clientid)">获取设备信息</el-button>
-							<!-- <el-button v-if="client.typeName === 'wifi模块' && !isDeviceBound(client.clientid)" type="success" @click="currentClientId = client.clientid; handleBindDevice()">绑定设备</el-button> -->
+							<el-button v-if="client.typeName === '4G模块'" type="success" @click="open4GDialog(client.clientid)">4G通信</el-button>
 						</div>
 					</div>
 				</div>
@@ -83,7 +83,7 @@
 		<el-empty v-if="!tableLoading && clientList.length === 0" description="暂无在线客户端" />
 	</div>
 
-	<el-dialog v-model="deviceInfoDialog" title="设备信息" :width="isMobile ? '90%' : '20%'" :close-on-click-modal="false">
+	<el-dialog v-model="deviceInfoDialog" title="设备信息" width="500px" :close-on-click-modal="false">
 		<template #default>
 			<div v-if="deviceInfoData">
 				<pre style="background: #f6f8fa; padding: 12px; border-radius: 6px; overflow: auto; max-height: 400px"
@@ -97,42 +97,17 @@
 		</template>
 		<template #footer>
 			<el-button type="danger" style="float: left" @click="handleResetNetwork">重置配网</el-button>
-			<el-button v-if="bindDdeviceBtn" type="warning" @click="handleBindDevice">绑定设备</el-button>
 			<el-button @click="deviceInfoDialog = false">关闭</el-button>
 		</template>
 	</el-dialog>
 
-	<!-- 绑定设备弹窗 -->
-	<el-dialog v-model="bindDialog" title="绑定设备" :width="isMobile ? '90%' : '400px'" append-to-body>
-		<el-form :model="bindForm" :label-width="isMobile ? '70px' : '80px'">
-			<el-form-item label="设备编号">
-				<el-input v-model="currentClientId" disabled />
-			</el-form-item>
-			<el-form-item label="绑定部门" required>
-				<el-tree-select
-					v-model="bindForm.deptId"
-					:data="deptOptions"
-					:props="{ value: 'id', label: 'label', children: 'children' }"
-					value-key="id"
-					placeholder="请选择归属部门"
-					check-strictly
-					style="width: 100%"
-				/>
-			</el-form-item>
-		</el-form>
-		<template #footer>
-			<div class="dialog-footer">
-				<el-button type="primary" @click="submitBindDevice">确 定</el-button>
-				<el-button @click="cancelBindDevice">取 消</el-button>
-			</div>
-		</template>
-	</el-dialog>
+	<!-- 4G模块通信对话框 -->
+	<FourGDialog v-model="fourGDialogVisible" :client-id="current4GClientId" />
 </template>
 
 <script setup>
 import { useMQTTStore } from '@/store/modules/useMQTTStore';
-import { listDevice, deviceBindApi } from '@/api/gf/device';
-import { deptTreeSelect } from '@/api/system/user';
+import FourGDialog from './4G.vue';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
@@ -144,26 +119,20 @@ const MQTT_TOKEN_KEY = 'mqtt_api_token';
 let timer = null;
 let isFirstLoad = true;
 
-const deviceInfoDialog = ref(false);
-const deviceInfoData = ref(null);
-const deviceInfoRaw = ref('');
-const currentClientId = ref('');
-const bindDialog = ref(false);
-const bindForm = ref({ deptId: null });
-const deptOptions = ref([]);
-const deviceList = ref([]); // 存储设备绑定状态
-const isMobile = ref(false);
-const bindDdeviceBtn = ref(false);
+// 4G对话框相关
+const fourGDialogVisible = ref(false);
+const current4GClientId = ref('');
 
 const username = 'public';
 const password = 'ByufSsGA96Q:Dd2';
+
 
 /** 客户端类型配置 */
 const CLIENT_TYPES = [
 	{ prefix: 'GFKM-', typeName: 'wifi模块', typeColor: 'warning', needSubscribe: true },
 	{ prefix: 'wx_', typeName: '微信小程序', typeColor: 'success', needSubscribe: false },
 	{ prefix: 'web-', typeName: 'PC管理后台', typeColor: 'primary', needSubscribe: false },
-	{ prefix: 'server-', typeName: '系统服务端', typeColor: 'danger', needSubscribe: false },
+	{ prefix: 'server_km', typeName: '系统服务端', typeColor: 'danger', needSubscribe: false },
 	{ prefix: 'mqttx_', typeName: '调试工具', typeColor: 'info', needSubscribe: false },
 	{ pattern: /^\d{15}$/, typeName: '4G模块', typeColor: 'info', needSubscribe: false }, // IMEI号15位数字
 ];
@@ -235,17 +204,6 @@ async function requestWithAuth(requestFn) {
 	}
 }
 
-// 查询所有设备并构建Map
-async function fetchDeviceMap(serialNumber) {
-	try {
-		const res = await listDevice({ pageNum: 1, pageSize: 10, serialNumber });
-		deviceList.value = res.data.rows;
-		isDeviceBound(serialNumber);
-	} catch (e) {
-		console.error('获取设备列表失败:', e);
-	}
-}
-
 // 获取客户端列表
 async function fetchClientList() {
 	// 只有首次加载才显示loading，后续静默刷新
@@ -275,31 +233,31 @@ async function fetchClientList() {
 		}
 	}
 }
+const deviceInfoDialog = ref(false);
+const deviceInfoData = ref(null);
+const deviceInfoRaw = ref('');
+const currentClientId = ref('');
 
 const getDeviceConfig = async clientId => {
+	currentClientId.value = clientId;
+	tableLoading.value = true;
+	mqttStore.publish(`/req/${clientId}`, 'config-get');
 	try {
-		currentClientId.value = clientId;
-		tableLoading.value = true;
-		mqttStore.publish(`/req/${clientId}`, 'config-get');
+		const deviceInfo = await getDeviceInfo(clientId);
+		tableLoading.value = false;
+		// 尝试解析JSON
+		let parsed = null;
 		try {
-			const deviceInfo = await getDeviceInfo(clientId);
-			tableLoading.value = false;
-			// 尝试解析JSON
-			let parsed = null;
-			try {
-				parsed = JSON.parse(deviceInfo);
-			} catch (e) {
-				parsed = null;
-			}
-			deviceInfoData.value = parsed;
-			deviceInfoRaw.value = deviceInfo;
-			deviceInfoDialog.value = true;
-		} catch (error) {
-			tableLoading.value = false;
-			proxy.$modal.msgError('获取设备信息失败，设备可能离线！');
+			parsed = JSON.parse(deviceInfo);
+		} catch (e) {
+			parsed = null;
 		}
-	} finally {
-		fetchDeviceMap(clientId);
+		deviceInfoData.value = parsed;
+		deviceInfoRaw.value = deviceInfo;
+		deviceInfoDialog.value = true;
+	} catch (error) {
+		tableLoading.value = false;
+		proxy.$modal.msgError('获取设备信息失败，设备可能离线！');
 	}
 };
 
@@ -310,7 +268,7 @@ function handleResetNetwork() {
 		proxy.$modal.msgError('设备ID不存在！');
 		return;
 	}
-
+	
 	proxy.$modal
 		.confirm(`是否确认重置配网设备编号为"${clientId}"的设备？重置后设备将重启并清除WIFI配置！`)
 		.then(() => {
@@ -323,6 +281,12 @@ function handleResetNetwork() {
 			}, 2000);
 		})
 		.catch(() => {});
+}
+
+/** 打开4G通信对话框 */
+function open4GDialog(clientId) {
+	current4GClientId.value = clientId;
+	fourGDialogVisible.value = true;
 }
 
 /** 获取设备信息 */
@@ -344,68 +308,6 @@ function getDeviceInfo(serialNumber) {
 	});
 }
 
-// 判断设备是否已绑定
-function isDeviceBound(clientId) {
-	// 如果设备存在，判断是否已绑定（deptId不为0且不为null则已绑定）
-	const device = deviceList.value.find(dev => dev.serialNumber === clientId);
-	if (device && device.deptId && device.deptId != 0) {
-		bindDdeviceBtn.value = false; // 已绑定
-	} else {
-		bindDdeviceBtn.value = true; // 未绑定
-	}
-}
-
-// 打开绑定设备弹窗
-function handleBindDevice() {
-	const clientId = currentClientId.value;
-	if (!clientId) {
-		proxy.$modal.msgError('设备ID不存在！');
-		return;
-	}
-
-	if (!bindDdeviceBtn.value) {
-		proxy.$modal.msgWarning('该设备已绑定！');
-		return;
-	}
-
-	// 获取部门树
-	deptTreeSelect().then(response => {
-		deptOptions.value = response.data;
-		bindDialog.value = true;
-	});
-}
-
-// 提交绑定设备
-function submitBindDevice() {
-	if (!bindForm.value.deptId) {
-		proxy.$modal.msgWarning('请选择绑定部门！');
-		return;
-	}
-
-	const clientId = currentClientId.value;
-	tableLoading.value = true;
-
-	deviceBindApi(bindForm.value.deptId, clientId)
-		.then(response => {
-			proxy.$modal.msgSuccess('绑定成功！');
-			bindDialog.value = false;
-			deviceInfoDialog.value = false;
-			bindForm.value.deptId = null;
-		})
-		.catch(error => {
-			proxy.$modal.msgError('绑定失败: ' + (error.message || '未知错误'));
-		})
-		.finally(() => {
-			tableLoading.value = false;
-		});
-}
-
-// 取消绑定
-function cancelBindDevice() {
-	bindDialog.value = false;
-	bindForm.value.deptId = null;
-}
-
 /** 订阅所有wifi设备 */
 function handleSubscribeAll() {
 	clientList.value.forEach(item => {
@@ -419,11 +321,11 @@ function handleSubscribeAll() {
 			}
 			return false;
 		});
-
+		
 		if (clientType) {
 			item.typeName = clientType.typeName;
 			item.typeColor = clientType.typeColor;
-
+			
 			// 首次加载且需要订阅的类型才订阅
 			if (isFirstLoad && clientType.needSubscribe) {
 				console.log('订阅', `/resp/${item.clientid}`);
@@ -436,13 +338,7 @@ function handleSubscribeAll() {
 		}
 	});
 }
-// 检测是否为移动端
-function checkMobile() {
-	isMobile.value = window.innerWidth <= 768;
-}
 onMounted(() => {
-	checkMobile();
-	window.addEventListener('resize', checkMobile);
 	mqttStore.connect();
 	// 监听MQTT连接成功后再加载列表
 	const stopWatch = watch(
@@ -461,7 +357,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-	window.removeEventListener('resize', checkMobile);
 	mqttStore.disconnect();
 	// 组件卸载时清除定时器
 	if (timer) {
@@ -572,24 +467,5 @@ onBeforeUnmount(() => {
 
 :deep(.el-divider--horizontal) {
 	margin: 12px 0;
-}
-
-/* 弹窗优化 */
-.dialog-footer {
-	display: flex;
-	justify-content: center;
-	gap: 10px;
-}
-
-/* 移动端适配 */
-@media (max-width: 768px) {
-	.client-grid {
-		grid-template-columns: 1fr;
-	}
-
-	.dialog-footer .el-button {
-		flex: 1;
-		max-width: 120px;
-	}
 }
 </style>
