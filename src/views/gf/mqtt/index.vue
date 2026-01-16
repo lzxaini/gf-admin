@@ -121,7 +121,7 @@ const CLIENT_TYPES = [
 	{ prefix: 'GFKM-', typeName: 'wifi模块', typeColor: 'warning', needSubscribe: true },
 	{ prefix: 'wx_', typeName: '微信小程序', typeColor: 'success', needSubscribe: false },
 	{ prefix: 'web-', typeName: 'PC管理后台', typeColor: 'primary', needSubscribe: false },
-	{ prefix: 'server_km', typeName: '系统服务端', typeColor: 'danger', needSubscribe: false },
+	{ prefix: 'server-', typeName: '系统服务端', typeColor: 'danger', needSubscribe: false },
 	{ prefix: 'mqttx_', typeName: '调试工具', typeColor: 'info', needSubscribe: false },
 	{ pattern: /^\d{15}$/, typeName: '4G模块', typeColor: 'info', needSubscribe: false }, // IMEI号15位数字
 ];
@@ -149,7 +149,7 @@ function clearToken() {
 // 登录获取token
 async function login() {
 	try {
-		const res = await axios.post('http://mqtt.api.guangfkm.cn/api/v5/login', { username, password });
+		const res = await axios.post(`${import.meta.env.VITE_APP_EMQX_SERVER_API}/api/v5/login`, { username, password });
 		const token = res.data.token;
 		setToken(token);
 		return token;
@@ -202,7 +202,7 @@ async function fetchClientList() {
 	try {
 		const res = await requestWithAuth(token =>
 			axios.get(
-				'http://mqtt.api.guangfkm.cn/api/v5/clients_v2?limit=100&fields=clientid,username,connected,ip_address,keepalive,connected_at,recv_msg,send_msg,created_at,subscriptions_cnt',
+				`${import.meta.env.VITE_APP_EMQX_SERVER_API}/api/v5/clients_v2?limit=100&fields=clientid,username,connected,ip_address,keepalive,connected_at,recv_msg,send_msg,created_at,subscriptions_cnt`,
 				{
 					headers: {
 						Authorization: `Bearer ${token}`,
