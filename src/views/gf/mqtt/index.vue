@@ -72,7 +72,7 @@
 
 					<div class="info-row">
 						<div class="info-item full-width">
-							<el-button v-if="client.typeName === 'wifi模块'" type="primary" @click="getDeviceConfig(client.clientid)">获取设备信息</el-button>
+							<el-button v-if="client.typeName === 'wifi模块'" type="primary" @click="openWifiDialog(client.clientid)">WiFi通信</el-button>
 							<el-button v-if="client.typeName === '4G模块'" type="success" @click="open4GDialog(client.clientid)">4G通信</el-button>
 						</div>
 					</div>
@@ -83,23 +83,8 @@
 		<el-empty v-if="!tableLoading && clientList.length === 0" description="暂无在线客户端" />
 	</div>
 
-	<el-dialog v-model="deviceInfoDialog" title="设备信息" width="500px" :close-on-click-modal="false">
-		<template #default>
-			<div v-if="deviceInfoData">
-				<pre style="background: #f6f8fa; padding: 12px; border-radius: 6px; overflow: auto; max-height: 400px"
-					>{{ JSON.stringify(deviceInfoData, null, 2) }}
-					</pre
-				>
-			</div>
-			<div v-else>
-				<pre style="background: #f6f8fa; padding: 12px; border-radius: 6px; overflow: auto; max-height: 400px">{{ deviceInfoRaw }}</pre>
-			</div>
-		</template>
-		<template #footer>
-			<el-button type="danger" style="float: left" @click="handleResetNetwork">重置配网</el-button>
-			<el-button @click="deviceInfoDialog = false">关闭</el-button>
-		</template>
-	</el-dialog>
+	<!-- WiFi模块通信对话框 -->
+	<WifiDialog v-model="wifiDialogVisible" :client-id="currentWifiClientId" />
 
 	<!-- 4G模块通信对话框 -->
 	<FourGDialog v-model="fourGDialogVisible" :client-id="current4GClientId" />
@@ -107,6 +92,7 @@
 
 <script setup>
 import { useMQTTStore } from '@/store/modules/useMQTTStore';
+import WifiDialog from './wifi.vue';
 import FourGDialog from './4G.vue';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -119,13 +105,16 @@ const MQTT_TOKEN_KEY = 'mqtt_api_token';
 let timer = null;
 let isFirstLoad = true;
 
+// WiFi对话框相关
+const wifiDialogVisible = ref(false);
+const currentWifiClientId = ref('');
+
 // 4G对话框相关
 const fourGDialogVisible = ref(false);
 const current4GClientId = ref('');
 
 const username = 'public';
 const password = 'ByufSsGA96Q:Dd2';
-
 
 /** 客户端类型配置 */
 const CLIENT_TYPES = [
@@ -233,79 +222,16 @@ async function fetchClientList() {
 		}
 	}
 }
-const deviceInfoDialog = ref(false);
-const deviceInfoData = ref(null);
-const deviceInfoRaw = ref('');
-const currentClientId = ref('');
-
-const getDeviceConfig = async clientId => {
-	currentClientId.value = clientId;
-	tableLoading.value = true;
-	mqttStore.publish(`/req/${clientId}`, 'config-get');
-	try {
-		const deviceInfo = await getDeviceInfo(clientId);
-		tableLoading.value = false;
-		// 尝试解析JSON
-		let parsed = null;
-		try {
-			parsed = JSON.parse(deviceInfo);
-		} catch (e) {
-			parsed = null;
-		}
-		deviceInfoData.value = parsed;
-		deviceInfoRaw.value = deviceInfo;
-		deviceInfoDialog.value = true;
-	} catch (error) {
-		tableLoading.value = false;
-		proxy.$modal.msgError('获取设备信息失败，设备可能离线！');
-	}
-};
-
-/** 重置配网 */
-function handleResetNetwork() {
-	const clientId = currentClientId.value;
-	if (!clientId) {
-		proxy.$modal.msgError('设备ID不存在！');
-		return;
-	}
-	
-	proxy.$modal
-		.confirm(`是否确认重置配网设备编号为"${clientId}"的设备？重置后设备将重启并清除WIFI配置！`)
-		.then(() => {
-			tableLoading.value = true;
-			mqttStore.publish(`/req/${clientId}`, 'network-reset');
-			proxy.$modal.msgSuccess('重置配网指令已发送，请等待设备重启！');
-			deviceInfoDialog.value = false;
-			setTimeout(() => {
-				tableLoading.value = false;
-			}, 2000);
-		})
-		.catch(() => {});
+/** 打开WiFi通信对话框 */
+function openWifiDialog(clientId) {
+	currentWifiClientId.value = clientId;
+	wifiDialogVisible.value = true;
 }
 
 /** 打开4G通信对话框 */
 function open4GDialog(clientId) {
 	current4GClientId.value = clientId;
 	fourGDialogVisible.value = true;
-}
-
-/** 获取设备信息 */
-function getDeviceInfo(serialNumber) {
-	return new Promise((resolve, reject) => {
-		const messageListener = (topic, message) => {
-			if (topic === `/resp/${serialNumber}`) {
-				mqttStore.offMessage(messageListener);
-				resolve(message.toString());
-			}
-		};
-		mqttStore.onMessage(messageListener);
-
-		// 超时处理，5秒后如果没有收到消息则拒绝
-		setTimeout(() => {
-			mqttStore.offMessage(messageListener);
-			reject(new Error('获取设备信息超时'));
-		}, 5000);
-	});
 }
 
 /** 订阅所有wifi设备 */
@@ -321,11 +247,11 @@ function handleSubscribeAll() {
 			}
 			return false;
 		});
-		
+
 		if (clientType) {
 			item.typeName = clientType.typeName;
 			item.typeColor = clientType.typeColor;
-			
+
 			// 首次加载且需要订阅的类型才订阅
 			if (isFirstLoad && clientType.needSubscribe) {
 				console.log('订阅', `/resp/${item.clientid}`);
@@ -367,6 +293,14 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.command-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 16px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid #ebeef5;
+}
 .app-container {
 	padding: 24px;
 	background: #f5f7fa;
