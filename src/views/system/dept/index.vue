@@ -37,7 +37,8 @@
 			<el-table-column prop="deptName" label="部门名称" width="260"></el-table-column>
 			<el-table-column label="部门分类" align="center" prop="deptType">
 				<template #default="scope">
-					<dict-tag :options="gf_dept_type" :value="scope.row.deptType" />
+					<dict-tag :options="gf_dept_type" :value="scope.row.deptType" v-if="scope.row.deptName !== '游客部门'" />
+					<el-tag v-else type="primary">游客部门</el-tag>
 				</template>
 			</el-table-column>
 			<!-- <el-table-column prop="orderNum" label="排序"></el-table-column> -->
