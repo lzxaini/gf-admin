@@ -39,6 +39,11 @@ export default defineConfig(({ mode, command }) => {
           target: 'https://mqtt.gfkm.cc',
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/mqttapi/, '')
+        },
+        '/simapi': {
+          target: 'https://5giot.cn/prod-api',
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/simapi/, '')
         }
       }
     },
