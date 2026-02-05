@@ -157,6 +157,20 @@ export const dynamicRoutes = [
         meta: { title: '修改生成配置', activeMenu: '/tool/gen' }
       }
     ]
+  },
+  {
+    path: '/gf/sim-list',
+    component: Layout,
+    hidden: true,
+    permissions: ['gf:sim:list'],
+    children: [
+      {
+        path: '/business/sim/list',
+        component: () => import('@/views/gf/sim/sim_list.vue'),
+        name: 'SimList',
+        meta: { title: '流量池管理', activeMenu: '/sim/sim-list' }
+      }
+    ]
   }
 ]
 
