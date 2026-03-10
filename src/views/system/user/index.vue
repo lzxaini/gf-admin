@@ -158,7 +158,7 @@
                </el-col>
                <el-col :xs="24" :sm="12">
                   <el-form-item label="归属部门" prop="deptId">
-                     <el-tree-select v-model="form.deptId" :data="deptOptions"
+                     <el-tree-select v-model="form.deptId" :data="deptOptions" filterable
                         :props="{ value: 'id', label: 'label', children: 'children' }" value-key="id"
                         placeholder="请选择归属部门" check-strictly style="width: 100%" />
                   </el-form-item>
