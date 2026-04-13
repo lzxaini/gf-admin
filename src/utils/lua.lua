@@ -1,12 +1,12 @@
-/*
- * @Author: 17630921248 1245634367@qq.com
- * @Date: 2026-04-13 15:25:24
- * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2026-04-13 15:25:26
- * @FilePath: \ryv3\src\utils\lua.js
- * @Description: Fuck Bug
- * 微信：lizx2066
- */
+--[[
+Author: 17630921248 1245634367@qq.com
+Date: 2026-04-13 15:27:57
+LastEditors: 17630921248 1245634367@qq.com
+LastEditTime: 2026-04-13 15:27:57
+FilePath: \ryv3\src\utils\lua.lua
+Description: Fuck Bug
+微信：lizx2066
+--]]
 local sys = require("sys")
 
 ------------------------------------------------
