@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2026-01-06 16:57:32
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2026-01-16 14:22:40
+ * @LastEditTime: 2026-04-13 16:41:47
  * @FilePath: \ryv3\src\views\gf\mqtt\4G.vue
  * @Description: 4G模块通信对话框
  * 微信:lizx2066
@@ -96,6 +96,8 @@ const messageContainer = ref(null);
 // 预定义指令列表
 const commands = [
 	{ label: '设备重启', command: 'AT+RESET\\r\\n', type: 'danger', isHex: false, needConfirm: true },
+	{ label: '内置版本', command: 'ATI\\r\\n', type: 'info', isHex: false, needConfirm: false },
+	{ label: '版本号', command: 'GVI', type: 'primary', isHex: false, needConfirm: false },
 	{ label: '获取IMEI', command: 'AT+IMEI\\r\\n', type: 'info', isHex: false, needConfirm: false },
 	{ label: '信号强度', command: 'AT+CSQ\\r\\n', type: 'primary', isHex: false, needConfirm: false },
 	// { label: 'UTC时间', command: 'AT+UTC\\r\\n', type: 'success', isHex: false, needConfirm: false },
@@ -103,7 +105,7 @@ const commands = [
 	{ label: '网络状态', command: 'AT+ISLINK\\r\\n', type: 'info', isHex: false, needConfirm: false },
 	{ label: '注册状态', command: 'AT+CEREG\\r\\n', type: 'info', isHex: false, needConfirm: false },
 	{ label: '远程开启', command: '06000001', type: 'success', isHex: true, needConfirm: true },
-	{ label: '强制结束', command: '05000002', type: 'danger', isHex: true, needConfirm: true },
+	{ label: '强制结束', command: '100000FF', type: 'danger', isHex: true, needConfirm: true },
 ];
 
 // Watch modelValue
@@ -319,14 +321,17 @@ function handleClose() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .command-buttons {
-	display: flex;
-	flex-wrap: wrap;
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
 	gap: 8px;
 	margin-bottom: 16px;
 	padding-bottom: 16px;
 	border-bottom: 1px solid #ebeef5;
+	.el-button {
+	margin-left: 0 !important;
+	}
 }
 
 .message-container {
