@@ -2,7 +2,7 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2026-03-10 08:13:11
+ * @LastEditTime: 2026-04-24 13:38:02
  * @FilePath: \ryv3\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -48,7 +48,8 @@
 				<el-form-item style="float: right">
 					<el-row :gutter="20" class="mb8">
 						<el-col :span="1.5">
-							<el-button type="primary" plain icon="Plus" @click="importDevice" v-hasPermi="['gf:device:add']">导入设备</el-button>
+							<!-- <el-button type="primary" plain icon="Plus" @click="importDevice" v-hasPermi="['gf:device:add']">导入设备</el-button> -->
+							<el-button type="primary" plain icon="Plus" @click="registerDailog.visible = true" v-hasPermi="['gf:device:add']">注册设备</el-button>
 						</el-col>
 						<el-col :span="1.5">
 							<el-button type="warning" plain icon="Download" @click="handleExport" v-hasPermi="['gf:device:export']">导出</el-button>
@@ -161,6 +162,15 @@
 				</div>
 			</template>
 		</el-dialog>
+		<el-dialog title="注册设备" v-model="registerDailog.visible" :width="isMobile ? '90%' : '20%'" append-to-body align-center style="margin-top: auto !important">
+			<el-input v-model="registerDailog.serialNumber" placeholder="请输入设备编号"></el-input>
+			<template #footer>
+				<div class="dialog-footer">
+					<el-button @click="registerDailog.visible = false">取 消</el-button>
+					<el-button type="primary" @click="handleRegister">确 定</el-button>
+				</div>
+			</template>
+		</el-dialog>
 	</div>
 </template>
 
@@ -170,7 +180,7 @@ import { deptTreeSelect } from '@/api/system/user';
 import deviceImg from '@/assets/images/device.png';
 import { useMQTTStore } from '@/store/modules/useMQTTStore';
 import { set } from 'nprogress';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 const mqttStore = useMQTTStore();
 
 const { proxy } = getCurrentInstance();
@@ -187,6 +197,10 @@ const total = ref(0);
 const title = ref('');
 const deptOptions = ref(undefined);
 const isMobile = ref(false);
+const registerDailog = ref({
+	visible: false,
+	serialNumber: '',
+});
 
 const data = reactive({
 	form: {},
@@ -330,6 +344,21 @@ function handleBind(row) {
 				proxy.$modal.msgSuccess('修改成功');
 				getList();
 			});
+		})
+		.then(() => {})
+		.catch(() => {});
+}
+/** 注册设备 */
+function handleRegister() {
+	proxy.$modal
+		.confirm('是否确认注册设备编号为"' + registerDailog.value.serialNumber + '"的数据项？')
+		.then(function () {
+			mqttStore.publish(`/register/device`, registerDailog.value.serialNumber);
+			proxy.$modal.msgSuccess('注册成功！');
+			queryParams.value.serialNumber = registerDailog.value.serialNumber;
+			registerDailog.value.visible = false;
+			registerDailog.value.serialNumber = '';
+			getList();
 		})
 		.then(() => {})
 		.catch(() => {});
@@ -507,9 +536,9 @@ const getLocation = async () => {
 };
 // 选择位置
 const handleChangeLocation = value => {
-	console.log("🥵 ~ handleChangeLocation ~ value: ", value)
+	console.log('🥵 ~ handleChangeLocation ~ value: ', value);
 	let address = value.map(item => item).join('/');
-	console.log("🥵 ~ handleChangeLocation ~ address: ", address)
+	console.log('🥵 ~ handleChangeLocation ~ address: ', address);
 	queryParams.value.address = address;
 	handleQuery();
 };
@@ -545,119 +574,119 @@ onBeforeUnmount(() => {
 	.app-container {
 		padding: 8px !important;
 	}
-	
+
 	.el-card {
 		margin-top: 10px !important;
 		margin-bottom: 10px !important;
 	}
-	
+
 	.el-card__body {
 		padding: 12px !important;
 	}
-	
+
 	.el-form--inline .el-form-item {
 		display: block;
 		margin-right: 0;
 		margin-bottom: 12px;
 	}
-	
+
 	.el-form-item__label {
 		// width: 100% !important;
 		text-align: left !important;
 		padding: 0 !important;
 		margin-bottom: 5px;
 	}
-	
+
 	.el-form-item__content {
 		margin-left: 0 !important;
 	}
-	
+
 	.el-row.mb8 {
 		margin-bottom: 8px !important;
 	}
-	
+
 	.el-col {
 		margin-bottom: 8px;
 	}
-	
+
 	.el-button {
 		padding: 8px 12px;
 		font-size: 13px;
 	}
-	
+
 	.el-button-group {
 		justify-content: center;
 		width: 100%;
 	}
-	
+
 	.el-button + .el-button {
 		margin-left: 0;
 	}
-	
+
 	.device_image {
 		width: 80px;
 	}
-	
+
 	.el-descriptions {
 		font-size: 12px !important;
 	}
-	
+
 	.el-descriptions__label,
 	.el-descriptions__content {
 		font-size: 11px !important;
 		padding: 6px 8px !important;
 	}
-	
+
 	.el-tag {
 		font-size: 11px !important;
 		padding: 2px 6px;
 	}
-	
+
 	/* 顶部标题栏优化 */
 	.el-card .el-row {
 		flex-wrap: wrap;
 	}
-	
+
 	svg-icon {
 		font-size: 14px;
 	}
-	
+
 	/* 分页器优化 */
 	.pagination-container {
 		padding: 10px !important;
 	}
-	
+
 	.el-pagination {
 		text-align: center;
 	}
-	
+
 	.el-pagination .el-select .el-input {
 		width: 90px !important;
 	}
-	
+
 	/* 弹窗适配 */
 	.el-dialog__body {
 		padding: 15px !important;
 	}
-	
+
 	.el-form-item {
 		margin-bottom: 15px;
 	}
-	
+
 	.el-tree-select {
 		font-size: 13px;
 	}
-	
+
 	.el-dialog__footer {
 		padding: 10px 15px !important;
 	}
-	
+
 	.dialog-footer {
 		display: flex;
 		justify-content: center;
 		gap: 10px;
 	}
-	
+
 	.dialog-footer .el-button {
 		flex: 1;
 		max-width: 120px;
