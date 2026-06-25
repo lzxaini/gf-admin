@@ -112,6 +112,7 @@
 </template>
 
 <script setup name="ServiceRecords">
+import { dayjs } from 'element-plus'
 import { listServiceSession, getSessionDetail } from "@/api/gf/serviceRecords";
 
 const { proxy } = getCurrentInstance();
@@ -121,7 +122,12 @@ const serviceRecordsList = ref([]);
 const loading = ref(true);
 const showSearch = ref(true);
 const total = ref(0);
-const dateRange = ref([]);
+// 计算近7天的日期范围
+function getDefaultDateRange() {
+  return [dayjs().subtract(7, 'day').format('YYYY-MM-DD'), dayjs().format('YYYY-MM-DD')];
+}
+
+const dateRange = ref(getDefaultDateRange());
 
 const data = reactive({
   queryParams: {
@@ -185,9 +191,8 @@ function handleQuery() {
 
 /** 重置按钮操作 */
 function resetQuery() {
-  dateRange.value = [];
-  queryParams.value.minServiceTime = null;
-  queryParams.value.maxServiceTime = null;
+  dateRange.value = getDefaultDateRange();
+  handleDateRangeChange(dateRange.value);
   proxy.resetForm("queryRef");
   handleQuery();
 }
@@ -198,6 +203,9 @@ function handleExport() {
     ...queryParams.value
   }, `${queryParams.value.deptName || '全部'}_服务记录_${new Date().getTime()}.xlsx`)
 }
+
+// 初始化默认时间范围查询参数
+handleDateRangeChange(dateRange.value);
 
 getList();
 </script>
