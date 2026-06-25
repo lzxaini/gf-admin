@@ -14,7 +14,7 @@
         <el-input v-model="queryParams.serialNumber" placeholder="请输入设备识别号" clearable @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="设备部门" prop="deptName">
-        <el-input v-model="queryParams.deptName" placeholder="请输入设备部门" clearable @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.deptName" placeholder="请输入设备部门" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="时间范围">
         <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
@@ -199,6 +199,15 @@ function resetQuery() {
 
 /** 导出按钮操作 */
 function handleExport() {
+  if (!dateRange.value || dateRange.value.length !== 2) {
+    proxy.$modal.msgWarning('请先选择时间范围（最多7天）');
+    return;
+  }
+  const diffDays = dayjs(dateRange.value[1]).diff(dayjs(dateRange.value[0]), 'day');
+  if (diffDays > 7) {
+    proxy.$modal.msgWarning('导出时间范围不能超过7天，请重新选择');
+    return;
+  }
   proxy.download('gf/serviceRecords/export', {
     ...queryParams.value
   }, `${queryParams.value.deptName || '全部'}_服务记录_${new Date().getTime()}.xlsx`)
