@@ -51,3 +51,20 @@ export function delServiceRecords(id) {
     method: 'delete'
   })
 }
+
+// 查询服务会话列表（按sessionId聚合，同一50分钟周期合并为一条）
+export function listServiceSession(query) {
+  return request({
+    url: '/gf/serviceRecords/sessionList',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询某会话的详细记录（展开查看暂停/恢复明细）
+export function getSessionDetail(sessionId) {
+  return request({
+    url: '/gf/serviceRecords/sessionDetail/' + sessionId,
+    method: 'get'
+  })
+}
