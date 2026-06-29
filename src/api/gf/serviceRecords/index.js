@@ -2,8 +2,8 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-08 17:33:33
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-08-08 17:33:41
- * @FilePath: \ryv3\src\api\gf\records\index.js
+ * @LastEditTime: 2026-06-29 08:14:06
+ * @FilePath: \gf-admin\src\api\gf\serviceRecords\index.js
  * @Description: Fuck Bug
  * 微信：lizx2066
  */
@@ -49,5 +49,22 @@ export function delServiceRecords(id) {
   return request({
     url: '/gf/serviceRecords/' + id,
     method: 'delete'
+  })
+}
+
+// 查询服务会话列表（按sessionId聚合，同一50分钟周期合并为一条）
+export function listServiceSession(query) {
+  return request({
+    url: '/gf/serviceRecords/sessionList',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询某会话的详细记录（展开查看暂停/恢复明细）
+export function getSessionDetail(sessionId) {
+  return request({
+    url: '/gf/serviceRecords/sessionDetail/' + sessionId,
+    method: 'get'
   })
 }
