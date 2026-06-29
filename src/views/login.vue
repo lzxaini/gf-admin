@@ -1,45 +1,79 @@
 <template>
   <div class="login">
+    <!-- 动态光晕背景元素 -->
+    <div class="bg-orb bg-orb--1"></div>
+    <div class="bg-orb bg-orb--2"></div>
+    <div class="bg-orb bg-orb--3"></div>
+
     <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
-      <h3 class="title">光馥科美运营管理系统</h3>
+      <!-- 品牌区域 -->
+      <div class="brand-header">
+        <div class="logo-icon">
+          <!-- <svg-icon icon-class="jfr-logo" class="logo-svg" /> -->
+          <img class="logo-svg" src="../assets/logo/gf_logo.png" alt="">
+        </div>
+        <h3 class="title">光馥 · 运营管理系统</h3>
+        <p class="sub-title">GUANGFU OPERATION MANAGEMENT</p>
+      </div>
+
+      <!-- 账号 -->
       <el-form-item prop="username">
-        <el-input v-model="loginForm.username" type="text" size="large" auto-complete="off" placeholder="账号">
-          <template #prefix><svg-icon icon-class="user" class="el-input__icon input-icon" /></template>
+        <el-input v-model="loginForm.username" type="text" size="large" auto-complete="off" placeholder="请输入账号"
+          class="enhanced-input">
+          <template #prefix>
+            <svg-icon icon-class="user" class="el-input__icon input-icon" />
+          </template>
         </el-input>
       </el-form-item>
+
+      <!-- 密码 -->
       <el-form-item prop="password">
-        <el-input v-model="loginForm.password" type="password" size="large" auto-complete="off" placeholder="密码"
-          @keyup.enter="handleLogin">
-          <template #prefix><svg-icon icon-class="password" class="el-input__icon input-icon" /></template>
+        <el-input v-model="loginForm.password" type="password" size="large" auto-complete="off" placeholder="请输入密码"
+          class="enhanced-input" @keyup.enter="handleLogin">
+          <template #prefix>
+            <svg-icon icon-class="password" class="el-input__icon input-icon" />
+          </template>
         </el-input>
       </el-form-item>
-      <el-form-item prop="code" v-if="captchaEnabled">
+
+      <!-- 验证码 -->
+      <el-form-item prop="code" v-if="captchaEnabled" class="captcha-item">
         <el-input v-model="loginForm.code" size="large" auto-complete="off" placeholder="验证码" style="width: 63%"
-          @keyup.enter="handleLogin">
-          <template #prefix><svg-icon icon-class="validCode" class="el-input__icon input-icon" /></template>
+          class="enhanced-input" @keyup.enter="handleLogin">
+          <template #prefix>
+            <svg-icon icon-class="validCode" class="el-input__icon input-icon" />
+          </template>
         </el-input>
         <div class="login-code">
           <img :src="codeUrl" @click="getCode" class="login-code-img" />
         </div>
       </el-form-item>
-      <el-checkbox v-model="loginForm.rememberMe" style="margin:0px 0px 25px 0px;">记住密码</el-checkbox>
-      <el-form-item style="width:100%;">
-        <el-button :loading="loading" size="large" type="primary" style="width:100%;" @click.prevent="handleLogin">
-          <span v-if="!loading">登 录</span>
-          <span v-else>登 录 中...</span>
-        </el-button>
-        <div style="float: right;" v-if="register">
+
+      <!-- 选项组 -->
+      <div class="options-row">
+        <el-checkbox v-model="loginForm.rememberMe" class="remember-check">记住密码</el-checkbox>
+        <span v-if="register" class="register-link">
           <router-link class="link-type" :to="'/register'">立即注册</router-link>
-        </div>
+        </span>
+      </div>
+
+      <!-- 登录按钮 -->
+      <el-form-item style="width:100%;">
+        <el-button :loading="loading" size="large" type="primary" style="width:100%;" class="login-btn"
+          @click.prevent="handleLogin">
+          <span v-if="!loading">登 录</span>
+          <span v-else>登录中...</span>
+        </el-button>
       </el-form-item>
+
+      <!-- 底部信息 (移到表单内部更紧凑) -->
+      <div class="form-footer">
+        <span>
+          <a href="https://beian.miit.gov.cn" target="_blank">粤ICP备2025444193号</a>
+        </span>
+        <span>Copyright © 2025-2026 光馥</span>
+      </div>
     </el-form>
-    <!--  底部  -->
-    <div class="el-login-footer">
-      <span style="display: block;">
-        <a href="https://beian.miit.gov.cn" target="_blank">粤ICP备2025513760号-2</a>
-      </span>
-      <span style="display: block;margin-top: 10px;">Copyright © 2020-2026 gfkm.cc All Rights Reserved.</span>
-    </div>
   </div>
 </template>
 
@@ -70,9 +104,7 @@ const loginRules = {
 
 const codeUrl = ref("");
 const loading = ref(false);
-// 验证码开关
 const captchaEnabled = ref(true);
-// 注册开关
 const register = ref(false);
 const redirect = ref(undefined);
 
@@ -84,18 +116,15 @@ function handleLogin() {
   proxy.$refs.loginRef.validate(valid => {
     if (valid) {
       loading.value = true;
-      // 勾选了需要记住密码设置在 cookie 中设置记住用户名和密码
       if (loginForm.value.rememberMe) {
         Cookies.set("username", loginForm.value.username, { expires: 30 });
         Cookies.set("password", encrypt(loginForm.value.password), { expires: 30 });
         Cookies.set("rememberMe", loginForm.value.rememberMe, { expires: 30 });
       } else {
-        // 否则移除
         Cookies.remove("username");
         Cookies.remove("password");
         Cookies.remove("rememberMe");
       }
-      // 调用action的登录方法
       userStore.login(loginForm.value).then(() => {
         const query = route.query;
         const otherQueryParams = Object.keys(query).reduce((acc, cur) => {
@@ -107,7 +136,6 @@ function handleLogin() {
         router.push({ path: redirect.value || "/", query: otherQueryParams });
       }).catch(() => {
         loading.value = false;
-        // 重新获取验证码
         if (captchaEnabled.value) {
           getCode();
         }
@@ -140,74 +168,15 @@ function getCookie() {
 getCode();
 getCookie();
 </script>
+<style>
+input:-webkit-autofill {
+  box-shadow: 0 0 0 1000px white inset;
+}
 
+input {
+  box-shadow: 0 0 0px 1000px white inset;
+}
+</style>
 <style lang='scss' scoped>
-.login {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  background-image: url("../assets/images/login-background.jpg");
-  background-size: cover;
-}
-
-.title {
-  margin: 0px auto 30px auto;
-  text-align: center;
-  color: #707070;
-}
-
-.login-form {
-  border-radius: 6px;
-  background: #ffffff;
-  width: 400px;
-  padding: 25px 25px 5px 25px;
-
-  .el-input {
-    height: 40px;
-
-    input {
-      height: 40px;
-    }
-  }
-
-  .input-icon {
-    height: 39px;
-    width: 14px;
-    margin-left: 0px;
-  }
-}
-
-.login-tip {
-  font-size: 13px;
-  text-align: center;
-  color: #bfbfbf;
-}
-
-.login-code {
-  width: 33%;
-  height: 40px;
-  float: right;
-
-  img {
-    cursor: pointer;
-    vertical-align: middle;
-  }
-}
-
-.el-login-footer {
-  position: fixed;
-  bottom: 30px;
-  width: 100%;
-  text-align: center;
-  color: #fff;
-  font-family: Arial;
-  font-size: 12px;
-  letter-spacing: 1px;
-}
-
-.login-code-img {
-  height: 40px;
-  padding-left: 12px;
-}
+@import url('../assets/styles/login.scss');
 </style>
