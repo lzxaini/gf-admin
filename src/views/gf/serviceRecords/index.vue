@@ -1,8 +1,8 @@
 <!--
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-08 17:33:14
- * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2026-06-29 08:13:53
+ * @LastEditors: lzx 1245634367@qq.com
+ * @LastEditTime: 2026-06-29 20:59:53
  * @FilePath: \gf-admin\src\views\gf\serviceRecords\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -13,8 +13,13 @@
       <el-form-item label="设备识别号" prop="serialNumber">
         <el-input v-model="queryParams.serialNumber" placeholder="请输入设备识别号" clearable @keyup.enter="handleQuery" />
       </el-form-item>
-      <el-form-item label="设备部门" prop="deptName">
+      <!-- <el-form-item label="设备部门" prop="deptName">
         <el-input v-model="queryParams.deptName" placeholder="请输入设备部门" @keyup.enter="handleQuery" />
+      </el-form-item> -->
+      <el-form-item label="归属部门" prop="deptId">
+        <el-tree-select v-model="queryParams.deptId" :data="deptOptions" filterable
+          :props="{ value: 'id', label: 'label', children: 'children' }" value-key="id" placeholder="请选择设备归属部门"
+          check-strictly style="width: 300px" clearable />
       </el-form-item>
       <el-form-item label="时间范围">
         <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
@@ -23,6 +28,12 @@
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+        <!-- <el-icon icon="WarningFilled" circle type="warning"/> -->
+        <el-tooltip effect="dark" content="导出系统全部服务记录，时间范围不能超过7天，查询则不能超过30天，指定部门或者设备后，导出和查询均不受时间限制！ " placement="top">
+          <el-icon size="20px" color="#e6a23c" style="margin-left: 20px;cursor: pointer;">
+            <WarningFilled />
+          </el-icon>
+        </el-tooltip>
       </el-form-item>
     </el-form>
 
@@ -114,6 +125,7 @@
 <script setup name="ServiceRecords">
 import { dayjs } from 'element-plus'
 import { listServiceSession, getSessionDetail } from "@/api/gf/serviceRecords";
+import { deptTreeSelect } from "@/api/system/user";
 
 const { proxy } = getCurrentInstance();
 const { iot_device_status, gf_service } = proxy.useDict("iot_device_status", "gf_service");
@@ -121,6 +133,7 @@ const { iot_device_status, gf_service } = proxy.useDict("iot_device_status", "gf
 const serviceRecordsList = ref([]);
 const loading = ref(true);
 const showSearch = ref(true);
+const deptOptions = ref(undefined);
 const total = ref(0);
 // 计算近7天的日期范围
 function getDefaultDateRange() {
@@ -185,6 +198,19 @@ function handleExpandChange(row, expandedRows) {
 
 /** 搜索按钮操作 */
 function handleQuery() {
+  // 如果指定了部门或设备识别号，则不限制时间范围
+  const hasFilter = queryParams.value.deptId || queryParams.value.serialNumber;
+  if (!hasFilter) {
+    if (!dateRange.value || dateRange.value.length !== 2) {
+      proxy.$modal.msgWarning('查询全部服务记录，请先选择时间范围（最多30天）！');
+      return;
+    }
+    const diffDays = dayjs(dateRange.value[1]).diff(dayjs(dateRange.value[0]), 'day');
+    if (diffDays > 31) {
+      proxy.$modal.msgWarning('查询全部服务记录，时间范围不能超过30天，请重新选择！');
+      return;
+    }
+  }
   queryParams.value.pageNum = 1;
   getList();
 }
@@ -199,22 +225,38 @@ function resetQuery() {
 
 /** 导出按钮操作 */
 function handleExport() {
-  if (!dateRange.value || dateRange.value.length !== 2) {
-    proxy.$modal.msgWarning('请先选择时间范围（最多7天）');
+  // 如果指定了部门或设备识别号，则不限制时间范围
+  const hasFilter = queryParams.value.deptId || queryParams.value.serialNumber;
+  if (!hasFilter) {
+    if (!dateRange.value || dateRange.value.length !== 2) {
+      proxy.$modal.msgWarning('查询系统全部数据，请先选择时间范围（最多30天）');
+      return;
+    }
+    const diffDays = dayjs(dateRange.value[1]).diff(dayjs(dateRange.value[0]), 'day');
+    if (diffDays > 30) {
+      proxy.$modal.msgWarning('导出系统全部数据时间范围不能超过30天，请重新选择');
+      return;
+    }
+  } else if (!dateRange.value || dateRange.value.length !== 2) {
+    proxy.$modal.msgWarning('请选择时间范围');
     return;
   }
-  const diffDays = dayjs(dateRange.value[1]).diff(dayjs(dateRange.value[0]), 'day');
-  if (diffDays > 7) {
-    proxy.$modal.msgWarning('导出时间范围不能超过7天，请重新选择');
-    return;
-  }
+  const fileName = queryParams.value.serialNumber
+    ? `${queryParams.value.serialNumber}_服务记录_${new Date().getTime()}.xlsx`
+    : (queryParams.value.deptName || '全部') + `_服务记录_${new Date().getTime()}.xlsx`;
   proxy.download('gf/serviceRecords/export', {
     ...queryParams.value
-  }, `${queryParams.value.deptName || '全部'}_服务记录_${new Date().getTime()}.xlsx`)
+  }, fileName)
 }
 
+/** 查询部门下拉树结构 */
+function getDeptTree() {
+  deptTreeSelect().then(response => {
+    deptOptions.value = response.data;
+  });
+};
 // 初始化默认时间范围查询参数
 handleDateRangeChange(dateRange.value);
-
+getDeptTree();
 getList();
 </script>
