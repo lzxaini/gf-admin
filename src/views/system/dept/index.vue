@@ -63,7 +63,8 @@
             </template>
          </el-table-column>
       </el-table>
-
+      <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum"
+         v-model:limit="queryParams.pageSize" @pagination="getList" />
       <!-- 添加或修改部门对话框 -->
       <el-dialog :title="title" v-model="open" :width="isMobile ? '95%' : '600px'" append-to-body>
          <el-form ref="deptRef" :model="form" :rules="rules" :label-width="isMobile ? '70px' : '80px'">
@@ -187,9 +188,12 @@ const deptType = ref()
 const rechargeOpen = ref(false);
 const rechargeInfo = ref()
 const rechargeAmount = ref(0)
+const total = ref(0);
 const data = reactive({
    form: {},
    queryParams: {
+      pageNum: 1,
+      pageSize: 10,
       deptName: undefined,
       status: undefined
    },
@@ -216,10 +220,16 @@ function checkMobile() {
 
 /** 查询部门列表 */
 function getList() {
+   // loading.value = true;
+   // listDept(queryParams.value).then(response => {
+   //    deptList.value = proxy.handleTree(response.data, "deptId");
+   //    loading.value = false;
+   // });
    loading.value = true;
-   listDept(queryParams.value).then(response => {
-      deptList.value = proxy.handleTree(response.data, "deptId");
+   listDept(queryParams.value).then(res => {
       loading.value = false;
+      deptList.value = res.rows;
+      total.value = res.total;
    });
 }
 /** 取消按钮 */
@@ -369,91 +379,91 @@ getList();
    .app-container {
       padding: 8px !important;
    }
-   
+
    /* 表单项垂直排列 */
    .el-form--inline .el-form-item {
       display: block;
       margin-right: 0;
       margin-bottom: 12px;
    }
-   
+
    .el-form-item__label {
       width: 100% !important;
       text-align: left !important;
       padding: 0 !important;
       margin-bottom: 5px;
    }
-   
+
    .el-form-item__content {
       margin-left: 0 !important;
    }
-   
+
    /* 按钮优化 */
    .el-button {
       padding: 8px 12px;
       font-size: 13px;
       margin-bottom: 5px;
    }
-   
+
    .el-row.mb8 {
       margin-bottom: 8px !important;
    }
-   
+
    .el-col {
       margin-bottom: 8px;
    }
-   
+
    /* 表格优化 */
    .el-table {
       font-size: 12px;
    }
-   
+
    .el-table th,
    .el-table td {
       padding: 8px 0;
    }
-   
+
    /* 弹窗优化 */
    .el-dialog__body {
       padding: 15px !important;
    }
-   
+
    .el-dialog__footer {
       padding: 10px 15px !important;
    }
-   
+
    .dialog-footer {
       display: flex;
       justify-content: center;
       gap: 10px;
    }
-   
+
    .dialog-footer .el-button {
       flex: 1;
       max-width: 120px;
    }
-   
+
    /* 表单项间距 */
    .el-form .el-row {
       margin-bottom: 0;
    }
-   
+
    .el-form .el-col {
       margin-bottom: 10px;
    }
-   
+
    /* 标签优化 */
    .el-tag {
       font-size: 11px !important;
       padding: 2px 6px;
    }
-   
+
    .el-select,
    .el-tree-select,
    .el-input {
       width: 100% !important;
    }
-   
+
    /* 输入数字框优化 */
    .el-input-number {
       width: 100% !important;
