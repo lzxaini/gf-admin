@@ -257,10 +257,10 @@
 .title {
   font-size: 22px;
   font-weight: 600;
-  color: #f85700;
+  color: #9e81b3;
   letter-spacing: 1px;
   margin: 0 0 4px 0;
-  background: linear-gradient(135deg, #f85700, #f7a275);
+  background: linear-gradient(135deg, #9e81b3, #9e81b3);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -415,16 +415,16 @@
   height: 50px !important;
   font-size: 16px !important;
   font-weight: 600 !important;
-  background: linear-gradient(135deg, #f85700, #f7a275) !important;
+  background: linear-gradient(135deg, #9e81b3, #9e81b3) !important;
   border: none !important;
-  box-shadow: 0 12px 28px #f8570030 !important;
+  box-shadow: 0 12px 28px #9e81b330 !important;
   transition: all 0.25s ease;
   letter-spacing: 2px;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 28px #f8570030 !important;
-    background: linear-gradient(135deg, #f85700, #f7a275) !important;
+    box-shadow: 0 12px 28px #9e81b330 !important;
+    background: linear-gradient(135deg, #9e81b3, #9e81b3) !important;
   }
 
   &:active {
