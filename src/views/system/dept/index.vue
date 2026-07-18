@@ -31,6 +31,7 @@
       <el-table v-if="refreshTable" v-loading="loading" :data="deptList" row-key="deptId"
          :default-expand-all="isExpandAll" :tree-props="{ children: 'children', hasChildren: 'hasChildren' }">
          <el-table-column prop="deptName" label="部门名称" width="260"></el-table-column>
+         <el-table-column prop="parentName" label="归属机构" width="260"></el-table-column>
          <el-table-column label="部门分类" align="center" prop="deptType">
             <template #default="scope">
                <dict-tag :options="gf_dept_type" :value="scope.row.deptType" />
