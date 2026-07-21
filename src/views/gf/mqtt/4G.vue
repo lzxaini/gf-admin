@@ -2,8 +2,8 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2026-01-06 16:57:32
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2026-04-13 16:41:47
- * @FilePath: \ryv3\src\views\gf\mqtt\4G.vue
+ * @LastEditTime: 2026-07-21 15:02:03
+ * @FilePath: \gf-servere:\code\gf-admin\src\views\gf\mqtt\4G.vue
  * @Description: 4G模块通信对话框
  * 微信:lizx2066
 -->
@@ -23,14 +23,7 @@
 				<div class="message-bubble">
 					<div class="message-label">
 						{{ msg.label }}
-						<el-button 
-							v-if="msg.location" 
-							type="primary" 
-							size="small" 
-							link 
-							@click="openBaiduMap(msg.location)"
-							style="margin-left: 8px;"
-						>
+						<el-button v-if="msg.location" type="primary" size="small" link @click="openBaiduMap(msg.location)" style="margin-left: 8px">
 							<el-icon><Location /></el-icon>
 							查看基站位置（非设备位置）
 						</el-button>
@@ -157,7 +150,6 @@ function handleMqttMessage(topic, message) {
 		let displayContent = '';
 		let isHexResponse = false;
 		let hexLabel = '收到响应';
-		
 		// 首先检查是否为二进制数据，且首字节是06或05
 		let shouldDisplayAsHex = false;
 		if (message instanceof Uint8Array || message instanceof ArrayBuffer) {
@@ -165,9 +157,11 @@ function handleMqttMessage(topic, message) {
 			// 只有06和05开头的显示为HEX
 			if (bytes.length > 0 && (bytes[0] === 0x06 || bytes[0] === 0x05)) {
 				shouldDisplayAsHex = true;
-				displayContent = Array.from(bytes).map(byte => byte.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+				displayContent = Array.from(bytes)
+					.map(byte => byte.toString(16).padStart(2, '0').toUpperCase())
+					.join(' ');
 				isHexResponse = true;
-				
+
 				if (bytes[0] === 0x06) {
 					hexLabel = '收到响应 (HEX) - 开启设备';
 				} else if (bytes[0] === 0x05) {
@@ -179,7 +173,6 @@ function handleMqttMessage(topic, message) {
 		if (!shouldDisplayAsHex) {
 			const content = message.toString();
 			displayContent = content;
-			
 			// 尝试解析JSON
 			try {
 				const jsonObj = JSON.parse(content);
@@ -189,7 +182,6 @@ function handleMqttMessage(topic, message) {
 				// 不是JSON，保持原样
 			}
 		}
-		
 		// 检查是否为LBS基站定位响应，提取经纬度
 		let location = null;
 		if (displayContent.includes('+LBS:')) {
@@ -201,7 +193,6 @@ function handleMqttMessage(topic, message) {
 				location = { lng, lat };
 			}
 		}
-		
 		addMessage({
 			type: 'receive',
 			label: isHexResponse ? hexLabel : '收到响应',
@@ -227,7 +218,6 @@ function sendCommand(command, isHex = false) {
 
 	sending.value = true;
 	const requestTopic = `/req/${props.clientId}`;
-	
 	// 添加发送消息
 	addMessage({
 		type: 'send',
@@ -303,10 +293,10 @@ function openBaiduMap(location) {
 		proxy.$modal.msgError('无法获取位置信息');
 		return;
 	}
-	
+
 	// 百度地图URL格式: https://api.map.baidu.com/marker?location=纬度,经度&title=标题&content=内容&output=html
 	const url = `https://api.map.baidu.com/marker?location=${location.lat},${location.lng}&title=设备位置&content=经度:${location.lng},纬度:${location.lat}&output=html&src=webapp.baidu.openAPIdemo`;
-	
+
 	// 在新窗口打开
 	window.open(url, '_blank');
 }
@@ -330,7 +320,7 @@ function handleClose() {
 	padding-bottom: 16px;
 	border-bottom: 1px solid #ebeef5;
 	.el-button {
-	margin-left: 0 !important;
+		margin-left: 0 !important;
 	}
 }
 

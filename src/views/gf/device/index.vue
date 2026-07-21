@@ -2,8 +2,8 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2026-04-24 13:38:02
- * @FilePath: \ryv3\src\views\gf\device\index.vue
+ * @LastEditTime: 2026-07-21 15:02:03
+ * @FilePath: \gf-servere:\code\gf-admin\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
 -->
