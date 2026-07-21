@@ -151,6 +151,7 @@
 							<el-tree-select
 								v-model="form.deptId"
 								:data="deptOptions"
+								filterable
 								:props="{ value: 'id', label: 'label', children: 'children' }"
 								value-key="id"
 								placeholder="请选择归属部门"

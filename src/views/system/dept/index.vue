@@ -71,7 +71,7 @@
 				<el-row>
 					<el-col :span="24" v-if="form.parentId !== 0 && title !== '修改部门'">
 						<el-form-item label="上级部门" prop="parentId">
-							<el-tree-select v-model="form.parentId" :data="deptOptions"
+							<el-tree-select v-model="form.parentId" :data="deptOptions" filterable
 								:props="{ value: 'deptId', label: 'deptName', children: 'children' }" value-key="deptId"
 								placeholder="选择上级部门" check-strictly :disabled="true" style="width: 100%" />
 						</el-form-item>

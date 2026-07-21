@@ -2,8 +2,8 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2025-09-23 08:56:40
- * @FilePath: \ryv3\src\views\gf\device\index.vue
+ * @LastEditTime: 2026-07-21 13:55:27
+ * @FilePath: \gf-servere:\code\gf-admin\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
 -->
@@ -125,6 +125,7 @@
 					<el-tree-select
 						v-model="form.deptId"
 						:data="deptOptions"
+						filterable
 						:props="{ value: 'id', label: 'label', children: 'children' }"
 						value-key="id"
 						placeholder="请选择归属部门"
