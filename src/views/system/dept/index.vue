@@ -50,16 +50,18 @@
 			</el-table-column>
 			<el-table-column label="操作" align="center" class-name="small-padding fixed-width">
 				<template #default="scope">
-					<el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
-						v-hasPermi="['system:dept:edit']">修改</el-button>
-					<el-button link type="primary" icon="Connection" @click="openSelectUser(scope.row)"
-						v-hasPermi="['system:dept:edit']">绑定</el-button>
-					<el-button link type="primary" icon="Wallet" @click="rechargeDialog(scope.row)"
-						v-hasPermi="['system:dept:edit']">充值</el-button>
-					<el-button link type="primary" icon="Plus" @click="handleAdd(scope.row)"
-						v-hasPermi="['system:dept:add']">新增</el-button>
-					<el-button v-if="scope.row.parentId != 0" link type="primary" icon="Delete" @click="handleDelete(scope.row)"
-						v-hasPermi="['system:dept:remove']">删除</el-button>
+					<div v-if="scope.row.deptName !== '游客部门'">
+						<el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
+							v-hasPermi="['system:dept:edit']">修改</el-button>
+						<el-button link type="primary" icon="Connection" @click="openSelectUser(scope.row)"
+							v-hasPermi="['system:dept:edit']">绑定</el-button>
+						<el-button link type="primary" icon="Wallet" @click="rechargeDialog(scope.row)"
+							v-hasPermi="['system:dept:edit']">充值</el-button>
+						<el-button link type="primary" icon="Plus" @click="handleAdd(scope.row)"
+							v-hasPermi="['system:dept:add']">新增</el-button>
+						<el-button v-if="scope.row.parentId != 0" link type="primary" icon="Delete" @click="handleDelete(scope.row)"
+							v-hasPermi="['system:dept:remove']">删除</el-button>
+					</div>
 				</template>
 			</el-table-column>
 		</el-table>
