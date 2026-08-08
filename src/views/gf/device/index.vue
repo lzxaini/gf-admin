@@ -126,16 +126,7 @@
 		<el-dialog :title="title" v-model="open" :width="isMobile ? '90%' : '20%'" append-to-body align-center style="margin-top: auto !important">
 			<el-form ref="deviceRef" :model="form" :rules="rules" :label-width="isMobile ? '70px' : '80px'">
 				<el-form-item label="绑定部门" prop="deptId">
-					<el-tree-select
-						v-model="form.deptId"
-						:data="deptOptions"
-						filterable
-						:props="{ value: 'id', label: 'label', children: 'children' }"
-						value-key="id"
-						placeholder="请选择归属部门"
-						check-strictly
-						style="width: 100%"
-					/>
+					<department-select v-model="form.deptId" placeholder="请选择绑定部门" />
 				</el-form-item>
 			</el-form>
 			<template #footer>
@@ -176,7 +167,6 @@
 
 <script setup name="Device">
 import { listDevice, getDevice, getLocationApi, addDevice, updateDevice } from '@/api/gf/device';
-import { deptTreeSelect } from '@/api/system/user';
 import deviceImg from '@/assets/images/device.png';
 import { useMQTTStore } from '@/store/modules/useMQTTStore';
 import { set } from 'nprogress';
@@ -195,7 +185,6 @@ const loadingText = ref('正在加载中，请稍后...');
 const showSearch = ref(true);
 const total = ref(0);
 const title = ref('');
-const deptOptions = ref(undefined);
 const isMobile = ref(false);
 const registerDailog = ref({
 	visible: false,
@@ -507,12 +496,6 @@ function handleExport() {
 		`device_${new Date().getTime()}.xlsx`
 	);
 }
-/** 查询部门下拉树结构 */
-function getDeptTree() {
-	deptTreeSelect().then(response => {
-		deptOptions.value = response.data;
-	});
-}
 /** 上传成功 */
 function updateSuccess(res) {
 	if (res.code === 200) {
@@ -548,7 +531,6 @@ function checkMobile() {
 	isMobile.value = window.innerWidth <= 768;
 }
 
-getDeptTree();
 onMounted(() => {
 	checkMobile();
 	window.addEventListener('resize', checkMobile);
@@ -671,10 +653,6 @@ onBeforeUnmount(() => {
 
 	.el-form-item {
 		margin-bottom: 15px;
-	}
-
-	.el-tree-select {
-		font-size: 13px;
 	}
 
 	.el-dialog__footer {

@@ -1,9 +1,9 @@
 <!--
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-08 17:33:14
- * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2026-07-21 15:02:02
- * @FilePath: \gf-servere:\code\gf-admin\src\views\gf\serviceRecords\index.vue
+ * @LastEditors: lzx 1245634367@qq.com
+ * @LastEditTime: 2026-08-08 22:19:54
+ * @FilePath: \gf-serverd:\code\GF-code\gf-admin\src\views\gf\serviceRecords\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
 -->
@@ -17,9 +17,10 @@
         <el-input v-model="queryParams.deptName" placeholder="请输入设备部门" @keyup.enter="handleQuery" />
       </el-form-item> -->
       <el-form-item label="归属部门" prop="deptId">
-        <el-tree-select v-model="queryParams.deptId" :data="deptOptions" filterable
+        <!-- <el-tree-select v-model="queryParams.deptId" :data="deptOptions" filterable
           :props="{ value: 'id', label: 'label', children: 'children' }" value-key="id" placeholder="请选择设备归属部门"
-          check-strictly style="width: 300px" clearable />
+          check-strictly style="width: 300px" clearable /> -->
+        <department-select v-model="queryParams.deptId" placeholder="请选择绑定部门" />
       </el-form-item>
       <el-form-item label="时间范围">
         <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
