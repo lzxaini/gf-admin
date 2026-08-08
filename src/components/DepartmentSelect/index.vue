@@ -2,7 +2,7 @@
  * @Author: lzx 1245634367@qq.com
  * @Date: 2026-08-08 22:09:01
  * @LastEditors: lzx 1245634367@qq.com
- * @LastEditTime: 2026-08-08 22:17:50
+ * @LastEditTime: 2026-08-08 22:38:17
  * @FilePath: \gf-serverd:\code\GF-code\gf-admin\src\components\DepartmentSelect\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
@@ -33,7 +33,7 @@
           <el-button icon="Refresh" @click="resetQuery">重置</el-button>
         </el-form-item>
       </el-form>
-      <el-table ref="deptTableRef" :data="deptList" height="300px" highlight-current-row empty-text="暂无部门数据"
+      <el-table ref="deptTableRef" :data="deptList" height="530px" highlight-current-row empty-text="暂无部门数据"
         @row-click="handleRowClick">
         <el-table-column label="选择" width="60" align="center">
           <template #default="scope">
@@ -53,11 +53,13 @@
           </template>
         </el-table-column>
       </el-table>
-      <div class="dept-select-pagination">
+      <!-- <div class="dept-select-pagination">
         <el-button size="small" :disabled="queryParams.pageNum <= 1" @click="pageChange(-1)">上一页</el-button>
         <span class="dept-select-page-info">{{ queryParams.pageNum }} / {{ totalPages }}</span>
         <el-button size="small" :disabled="queryParams.pageNum >= totalPages" @click="pageChange(1)">下一页</el-button>
-      </div>
+      </div> -->
+      <pagination v-show="deptTotal > 0" :total="deptTotal" v-model:page="queryParams.pageNum"
+        v-model:limit="queryParams.pageSize" @pagination="getDeptList" pagerCount="4" style="margin: 0;margin-bottom: 15px;"/>
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="handleConfirm">确 定</el-button>
@@ -100,7 +102,7 @@ const deptTableRef = ref(null);
 
 const queryParams = reactive({
   pageNum: 1,
-  pageSize: 16,
+  pageSize: 10,
   deptName: undefined,
 });
 
