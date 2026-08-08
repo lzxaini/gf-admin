@@ -2,8 +2,8 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2026-04-24 13:38:02
- * @FilePath: \ryv3\src\views\gf\device\index.vue
+ * @LastEditTime: 2026-07-23 14:15:11
+ * @FilePath: \gf-servere:\code\gf-admin\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
 -->
@@ -439,7 +439,7 @@ function handleOTA(row) {
 				.confirm('是否确认对设备编号为"' + row.serialNumber + '"的设备进行OTA升级？')
 				.then(function () {
 					if (deviceType == 'WIFI') {
-						mqttStore.publish(`/req/${serialNumber}`, 'ota-http-cmd ota.guangfkm.cn');
+						mqttStore.publish(`/req/${serialNumber}`, 'ota-http-cmd ota.chaosm.com');
 						proxy.$modal.msgSuccess('OTA升级指令已发送，请等待设备升级！');
 						// 监听OTA start消息
 						const otaStartListener = (topic, message) => {
