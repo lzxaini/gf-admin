@@ -69,7 +69,7 @@
       <!-- 底部信息 (移到表单内部更紧凑) -->
       <div class="form-footer">
         <span>
-          <a href="https://beian.miit.gov.cn" target="_blank">粤ICP备2026100471号</a>
+          <a href="https://beian.miit.gov.cn" target="_blank">粤ICP备2025444193号</a>
         </span>
         <span>Copyright © 2025-2026 玑肤芮</span>
       </div>
