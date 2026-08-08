@@ -241,7 +241,7 @@
 // 品牌区域
 .brand-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 32px;
 }
 
 .logo-icon {
@@ -250,17 +250,17 @@
   margin-bottom: 12px;
 
   .logo-svg {
-    height: 60px;
+    height: 48px;
   }
 }
 
 .title {
   font-size: 22px;
   font-weight: 600;
-  color: #5151c6;
+  color: #f85700;
   letter-spacing: 1px;
   margin: 0 0 4px 0;
-  background: linear-gradient(135deg, #5151c6, #7272b9);
+  background: linear-gradient(135deg, #f85700, #f7a275);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -415,16 +415,16 @@
   height: 50px !important;
   font-size: 16px !important;
   font-weight: 600 !important;
-  background: linear-gradient(135deg, #5151c6, #7272b9) !important;
+  background: linear-gradient(135deg, #f85700, #f7a275) !important;
   border: none !important;
-  box-shadow: 0 12px 28px #5151c630 !important;
+  box-shadow: 0 12px 28px #f8570030 !important;
   transition: all 0.25s ease;
   letter-spacing: 2px;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 28px #5151c630 !important;
-    background: linear-gradient(135deg, #5151c6, #7272b9) !important;
+    box-shadow: 0 12px 28px #f8570030 !important;
+    background: linear-gradient(135deg, #f85700, #f7a275) !important;
   }
 
   &:active {
