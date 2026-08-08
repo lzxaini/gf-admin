@@ -7,17 +7,25 @@
 					<el-input v-model="deptName" placeholder="请输入部门名称" clearable prefix-icon="Search" style="margin-bottom: 20px" />
 				</div>
 				<div class="head-container">
-					<el-tree
-						:data="deptOptions"
-						:props="{ label: 'label', children: 'children' }"
-						:expand-on-click-node="false"
-						:filter-node-method="filterNode"
-						ref="deptTreeRef"
-						node-key="id"
-						highlight-current
-						default-expand-all
-						@node-click="handleNodeClick"
-					/>
+					<div class="dept-panel">
+						<ul class="dept-list">
+							<li
+								v-for="item in deptList"
+								:key="item.deptId"
+								class="dept-item"
+								:class="{ 'is-active': queryParams.deptId === item.deptId }"
+								@click="handleDeptClick(item)"
+							>
+								{{ item.deptName }}
+							</li>
+							<li v-if="deptList.length === 0" class="dept-empty">暂无部门数据</li>
+						</ul>
+						<div class="dept-pagination">
+							<el-button size="small" :disabled="deptQuery.pageNum <= 1" @click="deptPageChange(-1)">上一页</el-button>
+							<span class="dept-page-info">{{ deptQuery.pageNum }} / {{ deptTotalPages }}</span>
+							<el-button size="small" :disabled="deptQuery.pageNum >= deptTotalPages" @click="deptPageChange(1)">下一页</el-button>
+						</div>
+					</div>
 				</div>
 			</el-col>
 			<!--用户数据-->
@@ -281,6 +289,7 @@
 <script setup name="User">
 import { getToken } from '@/utils/auth';
 import { changeUserStatus, listUser, resetUserPwd, delUser, getUser, updateUser, addUser, deptTreeSelect } from '@/api/system/user';
+import { listDept } from '@/api/system/dept';
 
 const router = useRouter();
 const { proxy } = getCurrentInstance();
@@ -298,6 +307,15 @@ const title = ref('');
 const dateRange = ref([]);
 const deptName = ref('');
 const deptOptions = ref(undefined);
+// 左侧部门列表（分页）
+const deptList = ref([]);
+const deptQuery = reactive({
+	pageNum: 1,
+	pageSize: 16,
+	deptName: undefined,
+});
+const deptTotal = ref(0);
+const deptTotalPages = computed(() => Math.max(1, Math.ceil(deptTotal.value / deptQuery.pageSize)));
 const initPassword = ref(undefined);
 const postOptions = ref([]);
 const roleOptions = ref([]);
@@ -362,20 +380,36 @@ function checkMobile() {
    isMobile.value = window.innerWidth <= 768;
 }
 
-/** 通过条件过滤节点  */
-const filterNode = (value, data) => {
-	if (!value) return true;
-	return data.label.indexOf(value) !== -1;
-};
-/** 根据名称筛选部门树 */
-watch(deptName, val => {
-	proxy.$refs['deptTreeRef'].filter(val);
-});
-/** 查询部门下拉树结构 */
+/** 查询部门下拉树结构（弹窗选择归属部门用） */
 function getDeptTree() {
 	deptTreeSelect().then(response => {
 		deptOptions.value = response.data;
 	});
+}
+/** 根据名称筛选左侧部门列表 */
+watch(deptName, val => {
+	deptQuery.pageNum = 1;
+	deptQuery.deptName = val || undefined;
+	getDeptList();
+});
+/** 查询左侧部门列表（分页，每页16条） */
+function getDeptList() {
+	listDept({ ...deptQuery }).then(res => {
+		deptList.value = (res.data && res.data.rows) || [];
+		deptTotal.value = (res.data && res.data.total) || 0;
+	});
+}
+/** 左侧部门列表翻页 */
+function deptPageChange(delta) {
+	const next = deptQuery.pageNum + delta;
+	if (next < 1 || next > deptTotalPages.value) return;
+	deptQuery.pageNum = next;
+	getDeptList();
+}
+/** 点击左侧部门，按部门过滤用户 */
+function handleDeptClick(item) {
+	queryParams.value.deptId = item.deptId;
+	handleQuery();
 }
 /** 查询用户列表 */
 function getList() {
@@ -385,11 +419,6 @@ function getList() {
 		userList.value = res.rows;
 		total.value = res.total;
 	});
-}
-/** 节点单击事件 */
-function handleNodeClick(data) {
-	queryParams.value.deptId = data.id;
-	handleQuery();
 }
 /** 搜索按钮操作 */
 function handleQuery() {
@@ -401,7 +430,6 @@ function resetQuery() {
 	dateRange.value = [];
 	proxy.resetForm('queryRef');
 	queryParams.value.deptId = undefined;
-	proxy.$refs.deptTreeRef.setCurrentKey(null);
 	handleQuery();
 }
 /** 删除按钮操作 */
@@ -585,6 +613,7 @@ function submitForm() {
 }
 
 getDeptTree();
+getDeptList();
 getList();
 
 onMounted(() => {
@@ -598,6 +627,59 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
+/* 左侧部门列表 */
+.dept-panel {
+	display: flex;
+	flex-direction: column;
+	// height: 100%;
+	flex: 1;
+	border: 1px solid #ebeef5;
+	border-radius: 6px;
+	overflow: hidden;
+}
+.dept-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	flex: 1;
+	// max-height: 560px;
+	overflow-y: auto;
+}
+.dept-item {
+	padding: 10px 14px;
+	font-size: 14px;
+	color: #303133;
+	cursor: pointer;
+	border-bottom: 1px solid #f5f5f5;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	&:hover {
+		background-color: #f5f7fa;
+	}
+	&.is-active {
+		background-color: #ecf5ff;
+		color: #409eff;
+	}
+}
+.dept-empty {
+	padding: 24px 0;
+	text-align: center;
+	font-size: 13px;
+	color: #909399;
+}
+.dept-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	padding: 8px 0;
+	border-top: 1px solid #ebeef5;
+}
+.dept-page-info {
+	font-size: 13px;
+	color: #606266;
+}
 /* 移动端适配 */
 @media (max-width: 768px) {
    .app-container {
