@@ -126,7 +126,7 @@
 <script setup name="ServiceRecords">
 import { dayjs } from 'element-plus'
 import { listServiceSession, getSessionDetail } from "@/api/gf/serviceRecords";
-import { deptTreeSelect } from "@/api/system/user";
+// import { deptTreeSelect } from "@/api/system/user";
 
 const { proxy } = getCurrentInstance();
 const { iot_device_status, gf_service } = proxy.useDict("iot_device_status", "gf_service");
@@ -134,7 +134,7 @@ const { iot_device_status, gf_service } = proxy.useDict("iot_device_status", "gf
 const serviceRecordsList = ref([]);
 const loading = ref(true);
 const showSearch = ref(true);
-const deptOptions = ref(undefined);
+// const deptOptions = ref(undefined);
 const total = ref(0);
 // 计算近7天的日期范围
 function getDefaultDateRange() {
@@ -251,13 +251,13 @@ function handleExport() {
 }
 
 /** 查询部门下拉树结构 */
-function getDeptTree() {
-  deptTreeSelect().then(response => {
-    deptOptions.value = response.data;
-  });
-};
+// function getDeptTree() {
+//   deptTreeSelect().then(response => {
+//     deptOptions.value = response.data;
+//   });
+// };
 // 初始化默认时间范围查询参数
 handleDateRangeChange(dateRange.value);
-getDeptTree();
+// getDeptTree();
 getList();
 </script>
