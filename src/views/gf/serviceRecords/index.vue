@@ -1,9 +1,9 @@
 <!--
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-08 17:33:14
- * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2026-07-21 15:02:02
- * @FilePath: \gf-servere:\code\gf-admin\src\views\gf\serviceRecords\index.vue
+ * @LastEditors: lzx 1245634367@qq.com
+ * @LastEditTime: 2026-08-08 22:19:54
+ * @FilePath: \gf-serverd:\code\GF-code\gf-admin\src\views\gf\serviceRecords\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
 -->
@@ -17,9 +17,10 @@
         <el-input v-model="queryParams.deptName" placeholder="请输入设备部门" @keyup.enter="handleQuery" />
       </el-form-item> -->
       <el-form-item label="归属部门" prop="deptId">
-        <el-tree-select v-model="queryParams.deptId" :data="deptOptions" filterable
+        <!-- <el-tree-select v-model="queryParams.deptId" :data="deptOptions" filterable
           :props="{ value: 'id', label: 'label', children: 'children' }" value-key="id" placeholder="请选择设备归属部门"
-          check-strictly style="width: 300px" clearable />
+          check-strictly style="width: 300px" clearable /> -->
+        <department-select v-model="queryParams.deptId" placeholder="请选择绑定部门" />
       </el-form-item>
       <el-form-item label="时间范围">
         <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
@@ -125,7 +126,7 @@
 <script setup name="ServiceRecords">
 import { dayjs } from 'element-plus'
 import { listServiceSession, getSessionDetail } from "@/api/gf/serviceRecords";
-import { deptTreeSelect } from "@/api/system/user";
+// import { deptTreeSelect } from "@/api/system/user";
 
 const { proxy } = getCurrentInstance();
 const { iot_device_status, gf_service } = proxy.useDict("iot_device_status", "gf_service");
@@ -133,7 +134,7 @@ const { iot_device_status, gf_service } = proxy.useDict("iot_device_status", "gf
 const serviceRecordsList = ref([]);
 const loading = ref(true);
 const showSearch = ref(true);
-const deptOptions = ref(undefined);
+// const deptOptions = ref(undefined);
 const total = ref(0);
 // 计算近7天的日期范围
 function getDefaultDateRange() {
@@ -250,13 +251,13 @@ function handleExport() {
 }
 
 /** 查询部门下拉树结构 */
-function getDeptTree() {
-  deptTreeSelect().then(response => {
-    deptOptions.value = response.data;
-  });
-};
+// function getDeptTree() {
+//   deptTreeSelect().then(response => {
+//     deptOptions.value = response.data;
+//   });
+// };
 // 初始化默认时间范围查询参数
 handleDateRangeChange(dateRange.value);
-getDeptTree();
+// getDeptTree();
 getList();
 </script>

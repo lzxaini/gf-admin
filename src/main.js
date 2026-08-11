@@ -42,6 +42,8 @@ import ImageUpload from "@/components/ImageUpload"
 import ImagePreview from "@/components/ImagePreview"
 // 自定义树选择组件
 import TreeSelect from '@/components/TreeSelect'
+// 搜索分页选择部门组件
+import DepartmentSelect from '@/components/DepartmentSelect'
 // 字典标签组件
 import DictTag from '@/components/DictTag'
 // 插件暗夜模式
@@ -64,6 +66,7 @@ app.config.globalProperties.selectDictLabels = selectDictLabels
 app.component('DictTag', DictTag)
 app.component('Pagination', Pagination)
 app.component('TreeSelect', TreeSelect)
+app.component('DepartmentSelect', DepartmentSelect)
 app.component('FileUpload', FileUpload)
 app.component('ImageUpload', ImageUpload)
 app.component('ImagePreview', ImagePreview)

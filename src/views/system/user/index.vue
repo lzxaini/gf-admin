@@ -151,7 +151,7 @@
 		</el-row>
 
 		<!-- 添加或修改用户配置对话框 -->
-		<el-dialog :title="title" v-model="open" width="600px" append-to-body>
+		<el-dialog :title="title" v-model="open" width="50%" append-to-body>
 			<el-form :model="form" :rules="rules" ref="userRef" label-width="100px">
 				<el-row>
 					<!-- <el-col :span="12">
@@ -166,9 +166,16 @@
 					</el-col>
 					<el-col :span="12">
 						<el-form-item label="归属部门" prop="deptId">
-							<el-tree-select v-model="form.deptId" :data="deptOptions" filterable
-								:props="{ value: 'id', label: 'label', children: 'children' }" value-key="id" placeholder="请选择归属部门"
-								check-strictly />
+							<!-- <el-tree-select
+								v-model="form.deptId"
+								:data="deptOptions"
+								filterable
+								:props="{ value: 'id', label: 'label', children: 'children' }"
+								value-key="id"
+								placeholder="请选择归属部门"
+								check-strictly
+							/> -->
+							<department-select v-model="form.deptId" placeholder="请选择绑定部门" style="width: 100%"/>
 						</el-form-item>
 					</el-col>
 				</el-row>
@@ -259,7 +266,7 @@
 		</el-dialog>
 
 		<!-- 用户导入对话框 -->
-		<el-dialog :title="upload.title" v-model="upload.open" width="400px" append-to-body>
+		<el-dialog :title="upload.title" v-model="upload.open" width="50%" append-to-body>
 			<el-upload ref="uploadRef" :limit="1" accept=".xlsx, .xls" :headers="upload.headers"
 				:action="upload.url + '?updateSupport=' + upload.updateSupport" :disabled="upload.isUploading"
 				:on-progress="handleFileUploadProgress" :on-success="handleFileSuccess" :auto-upload="false" drag>
@@ -379,11 +386,11 @@ function checkMobile() {
 }
 
 /** 查询部门下拉树结构（弹窗选择归属部门用） */
-function getDeptTree() {
-	deptTreeSelect().then(response => {
-		deptOptions.value = response.data;
-	});
-}
+// function getDeptTree() {
+// 	deptTreeSelect().then(response => {
+// 		deptOptions.value = response.data;
+// 	});
+// }
 /** 根据名称筛选左侧部门列表 */
 watch(deptName, val => {
 	deptQuery.pageNum = 1;
@@ -610,7 +617,7 @@ function submitForm() {
 	});
 }
 
-getDeptTree();
+// getDeptTree();
 getDeptList();
 getList();
 
