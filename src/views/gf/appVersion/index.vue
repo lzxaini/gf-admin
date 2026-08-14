@@ -148,7 +148,7 @@
           >
             <el-button type="primary" icon="Upload">上传安装包</el-button>
           </el-upload>
-          <div class="el-form-item-tip">支持 apk / ipa / aab 格式，单个文件不超过 500MB；上传成功后自动填充下载链接与大小</div>
+          <div class="el-form-item-tip">支持 apk / ipa / aab / wgt 格式，单个文件不超过 500MB；上传成功后自动填充下载链接与大小（wgt 为资源热更新包）</div>
         </el-form-item>
         <el-form-item label="下载链接" prop="downloadUrl">
           <el-input v-model="form.downloadUrl" placeholder="可手动填写，或通过上方上传安装包自动生成" clearable />
@@ -280,8 +280,8 @@ function handleUpdate(row) {
 function handleBeforeUpload(file) {
   const fileName = file.name.split(".");
   const fileExt = fileName[fileName.length - 1].toLowerCase();
-  if (!["apk", "ipa", "aab"].includes(fileExt)) {
-    proxy.$modal.msgError(`文件格式不正确，请上传 apk/ipa/aab 格式安装包！`);
+  if (!["apk", "ipa", "aab", "wgt"].includes(fileExt)) {
+    proxy.$modal.msgError(`文件格式不正确，请上传 apk/ipa/aab/wgt 格式安装包！`);
     return false;
   }
   const isLt = file.size / 1024 / 1024 < 500;
