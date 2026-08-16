@@ -12,7 +12,7 @@
           <!-- <svg-icon icon-class="jfr-logo" class="logo-svg" /> -->
            <img class="logo-svg" src="../assets/logo/logo-2.png" alt="">
         </div>
-        <h3 class="title">超素美 · 运营管理系统</h3>
+        <h3 class="title">禾壹净 · 运营管理系统</h3>
         <p class="sub-title">CHAOSUMEI OPERATION MANAGEMENT</p>
       </div>
 
@@ -71,7 +71,7 @@
         <span>
           <a href="https://beian.miit.gov.cn" target="_blank">粤ICP备2026100471号</a>
         </span>
-        <span>Copyright © 2025-2026 超素美</span>
+        <span>Copyright © 2025-2026 禾壹净</span>
       </div>
     </el-form>
   </div>
