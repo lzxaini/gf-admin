@@ -226,11 +226,11 @@
                   </el-form-item>
                </el-col> -->
 					<el-col :span="8">
-						<el-form-item label="白名单权限">
+						<el-form-item label="白名单权限" v-hasPermi="['system:user:topUp']">
 							<el-switch v-model="form.allowedWhite" :active-value="true" :inactive-value="false"></el-switch>
 						</el-form-item>
 					</el-col>
-					<el-col :span="8">
+					<el-col :span="8" v-hasPermi="['system:user:topUp']">
 						<el-form-item label="充值权限">
 							<el-switch v-model="form.allowedRecharge" :active-value="true" :inactive-value="false"></el-switch>
 						</el-form-item>
