@@ -106,12 +106,12 @@
 							<span>{{ parseTime(scope.row.createTime) }}</span>
 						</template>
 					</el-table-column>
-					<el-table-column label="白名单权限" align="center" prop="dept.deptType">
+					<!-- <el-table-column label="白名单权限" align="center" prop="dept.deptType">
 						<template #default="scope">
 							<el-tag :type="scope.row.allowedWhite ? 'success' : 'danger'"> {{ scope.row.allowedWhite ? '开' : '关'
 								}}</el-tag>
 						</template>
-					</el-table-column>
+					</el-table-column> -->
 					<el-table-column label="充值权限" align="center" prop="dept.deptType">
 						<template #default="scope">
 							<el-tag :type="scope.row.allowedRecharge ? 'success' : 'danger'"> {{ scope.row.allowedRecharge ? '开' : '关'
@@ -225,11 +225,11 @@
                      </el-select>
                   </el-form-item>
                </el-col> -->
-					<el-col :span="8">
+					<!-- <el-col :span="8">
 						<el-form-item label="白名单权限">
 							<el-switch v-model="form.allowedWhite" :active-value="true" :inactive-value="false"></el-switch>
 						</el-form-item>
-					</el-col>
+					</el-col> -->
 					<el-col :span="8">
 						<el-form-item label="充值权限">
 							<el-switch v-model="form.allowedRecharge" :active-value="true" :inactive-value="false"></el-switch>
@@ -240,17 +240,17 @@
 							<el-switch v-model="form.allowedShare" :active-value="true" :inactive-value="false"></el-switch>
 						</el-form-item>
 					</el-col>
-				</el-row>
-				<el-row>
-					<el-col :span="12">
+					<el-col :span="8">
 						<el-form-item label="状态">
 							<el-radio-group v-model="form.status">
 								<el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
-									}}</el-radio>
+								}}</el-radio>
 							</el-radio-group>
 						</el-form-item>
 					</el-col>
-					<el-col :span="12">
+				</el-row>
+				<el-row>
+					<el-col :span="24">
 						<el-form-item label="备注">
 							<el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
 						</el-form-item>
