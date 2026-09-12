@@ -1,9 +1,9 @@
 <!--
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2026-04-15 14:23:04
- * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2026-07-21 15:02:01
- * @FilePath: \gf-servere:\code\gf-admin\src\views\gf\statistics\index.vue
+ * @LastEditors: lzx 1245634367@qq.com
+ * @LastEditTime: 2026-09-12 20:58:12
+ * @FilePath: \gf-serverd:\code\GF-code\gf-admin\src\views\gf\statistics\index.vue
  * @Description: 统计页面 - 现代化设计风格
  * 微信:lizx2066
 -->
@@ -105,18 +105,25 @@
 				</div>
 			</div>
 
-			<el-table v-loading="loadingStores" :data="stores" class="data-table" :header-cell-style="{ background: '#fafafa', color: '#1d1d1f', fontWeight: '600', fontSize: '14px' }">
-				<el-table-column prop="deptName" label="机构名称" min-width="220">
+			<el-table
+				v-loading="loadingStores"
+				:data="stores"
+				class="data-table"
+				:default-sort="{ prop: sortProp, order: sortOrder }"
+				:header-cell-style="{ background: '#fafafa', color: '#1d1d1f', fontWeight: '600', fontSize: '14px' }"
+				@sort-change="handleSortChange"
+			>
+				<el-table-column prop="deptName" label="机构名称" min-width="220" sortable="custom">
 					<template #default="{ row }">
 						<div class="cell-name">{{ row.deptName }}</div>
 					</template>
 				</el-table-column>
-				<el-table-column prop="accountBalance" label="剩余点数" width="160" align="right">
+				<el-table-column prop="accountBalance" label="剩余点数" align="right" sortable="custom">
 					<template #default="{ row }">
 						<div class="cell-balance" :class="{ 'balance-low': row.accountBalance < 10 }">{{ formatNumber(row.accountBalance) }} pts</div>
 					</template>
 				</el-table-column>
-				<el-table-column prop="total" label="累计充值" width="160" align="right">
+				<el-table-column prop="total" label="累计充值" align="right" sortable="custom">
 					<template #default="{ row }">
 						<div class="cell-total">{{ formatNumber(row.total) }} pts</div>
 					</template>
@@ -154,6 +161,14 @@ const loadingStores = ref(false);
 const pageNum = ref(1);
 const pageSize = ref(12);
 const total = ref(0);
+
+// sorting for stores (server side)
+const sortProp = ref(null);
+const sortOrder = ref(null);
+const orderByColumn = ref('');
+const isAsc = ref('');
+
+const SORT_ORDER_MAP = { ascending: 'asc', descending: 'desc' };
 
 function formatNumber(v) {
 	if (v == null) return 0;
@@ -209,6 +224,10 @@ async function fetchStores(pn = pageNum.value, ps = pageSize.value) {
 	try {
 		const params = { pageNum: pn, pageSize: ps };
 		if (searchName.value) params.deptName = searchName.value;
+		if (orderByColumn.value && isAsc.value) {
+			params.orderByColumn = orderByColumn.value;
+			params.isAsc = isAsc.value;
+		}
 		const res = await getUserExtendListApi(params);
 		if (res && res.data) {
 			stores.value = res.data.rows || [];
@@ -221,6 +240,15 @@ async function fetchStores(pn = pageNum.value, ps = pageSize.value) {
 	} finally {
 		loadingStores.value = false;
 	}
+}
+
+function handleSortChange({ prop, order }) {
+	sortProp.value = prop || null;
+	sortOrder.value = order || null;
+	orderByColumn.value = order ? prop : '';
+	isAsc.value = order ? SORT_ORDER_MAP[order] || '' : '';
+	pageNum.value = 1;
+	fetchStores(1, pageSize.value);
 }
 
 function onSearchChange() {
