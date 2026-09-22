@@ -113,7 +113,7 @@
 								}}</el-tag>
 						</template>
 					</el-table-column> -->
-					<el-table-column label="充值权限" align="center" prop="dept.deptType">
+					<el-table-column label="充值权限" align="center" prop="dept.deptType" v-hasPermi="['system:user:topUp']">
 						<template #default="scope">
 							<el-tag :type="scope.row.allowedRecharge ? 'success' : 'danger'"> {{ scope.row.allowedRecharge ? '开' : '关'
 							}}</el-tag>
@@ -231,7 +231,7 @@
 							<el-switch v-model="form.allowedWhite" :active-value="true" :inactive-value="false"></el-switch>
 						</el-form-item>
 					</el-col> -->
-					<el-col :span="8">
+					<el-col :span="8" v-hasPermi="['system:user:topUp']">
 						<el-form-item label="充值权限">
 							<el-switch v-model="form.allowedRecharge" :active-value="true" :inactive-value="false"></el-switch>
 						</el-form-item>
