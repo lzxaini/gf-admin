@@ -91,7 +91,7 @@
 							<dict-tag :options="gf_dept_type" :value="scope.row.dept.deptType"
 								v-if="scope.row.dept && scope.row.dept.deptName !== '游客部门'" />
 							<el-tag type="danger" effect="plain" v-else>{{ scope.row.dept.deptName !== '游客部门' ? '无' : '游客部门'
-								}}</el-tag>
+							}}</el-tag>
 						</template>
 					</el-table-column>
 					<el-table-column label="手机号码" align="center" key="phonenumber" prop="phonenumber" v-if="columns[4].visible"
@@ -113,7 +113,7 @@
 								}}</el-tag>
 						</template>
 					</el-table-column> -->
-					<el-table-column label="充值权限" align="center" prop="dept.deptType">
+					<el-table-column label="充值权限" align="center" prop="dept.deptType" v-hasPermi="['system:user:topUp']">
 						<template #default="scope">
 							<el-tag :type="scope.row.allowedRecharge ? 'success' : 'danger'"> {{ scope.row.allowedRecharge ? '开' : '关'
 							}}</el-tag>
@@ -231,7 +231,7 @@
 							<el-switch v-model="form.allowedWhite" :active-value="true" :inactive-value="false"></el-switch>
 						</el-form-item>
 					</el-col> -->
-					<el-col :span="8">
+					<el-col :span="8" v-hasPermi="['system:user:topUp']">
 						<el-form-item label="充值权限">
 							<el-switch v-model="form.allowedRecharge" :active-value="true" :inactive-value="false"></el-switch>
 						</el-form-item>
