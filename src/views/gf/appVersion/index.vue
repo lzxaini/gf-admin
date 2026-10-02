@@ -81,6 +81,13 @@
           </el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="调试入口" align="center" width="130">
+        <template #default="scope">
+          <el-tag :type="scope.row.debugEnabled === 1 ? 'warning' : 'info'">{{ scope.row.debugEnabled === 1 ? '开启' : '关闭' }}</el-tag>
+          <el-switch :model-value="scope.row.debugEnabled || 0" :active-value="1" :inactive-value="0" :disabled="debugBusy[scope.row.id]" @change="handleDebugControl(scope.row, $event)" v-hasPermi="['gf:appVersion:edit']" />
+        </template>
+      </el-table-column>
+      <el-table-column label="授权修订" align="center" prop="debugRevision" width="100" />
       <el-table-column label="安装包大小" align="center" prop="fileSize" width="110" />
       <el-table-column label="下载链接" align="center" min-width="220">
         <template #default="scope">
@@ -92,9 +99,10 @@
       </el-table-column>
       <el-table-column label="更新说明" align="center" prop="updateMessage" min-width="200" show-overflow-tooltip />
       <el-table-column label="创建时间" align="center" prop="createTime" width="170" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="260">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['gf:appVersion:edit']">修改</el-button>
+          <el-button v-if="scope.row.debugEnabled === 1" link type="warning" :disabled="debugBusy[scope.row.id]" @click="handleDebugControl(scope.row, 1, true)" v-hasPermi="['gf:appVersion:edit']">重置密码</el-button>
           <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['gf:appVersion:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -107,6 +115,12 @@
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
+
+    <el-dialog title="调试密码已生成" v-model="passwordOpen" width="400px" append-to-body :close-on-click-modal="false" @closed="clearDebugPassword">
+      <el-alert title="密码仅展示本次，请复制并妥善保存。重置后旧密码及授权立即失效。" type="warning" :closable="false" />
+      <el-input :model-value="generatedPassword" readonly style="margin: 20px 0; font-size: 24px; letter-spacing: 4px" />
+      <template #footer><el-button @click="copyDebugPassword">复制密码</el-button><el-button type="primary" @click="passwordOpen = false">已保存</el-button></template>
+    </el-dialog>
 
     <!-- 添加或修改APP版本对话框 -->
     <el-dialog :title="title" v-model="open" width="620px" append-to-body>
@@ -171,7 +185,7 @@
 </template>
 
 <script setup name="AppVersion">
-import { listAppVersion, getAppVersion, addAppVersion, updateAppVersion, delAppVersion } from "@/api/gf/appVersion";
+import { listAppVersion, getAppVersion, addAppVersion, updateAppVersion, delAppVersion, controlAppDebug } from "@/api/gf/appVersion";
 import { getToken } from "@/utils/auth";
 
 const { proxy } = getCurrentInstance();
@@ -185,6 +199,9 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
+const debugBusy = ref({});
+const passwordOpen = ref(false);
+const generatedPassword = ref("");
 
 const baseUrl = import.meta.env.VITE_APP_BASE_API;
 const headers = ref({ Authorization: "Bearer " + getToken() });
@@ -207,6 +224,35 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
+
+async function handleDebugControl(row, enabled, resetPassword = false) {
+  if (debugBusy.value[row.id]) return;
+  debugBusy.value[row.id] = true;
+  try {
+    await proxy.$modal.confirm(resetPassword ? '重置密码会撤销所有已有调试授权，是否继续？' : enabled === 1 ? '开启调试入口并生成随机8位数字密码？' : '关闭后所有调试授权将失效，是否继续？');
+    const response = await controlAppDebug(row.id, { enabled, expectedRevision: row.debugRevision || 0, resetPassword });
+    row.debugEnabled = response.data.debugEnabled;
+    row.debugRevision = response.data.debugRevision;
+    if (response.data.password) { generatedPassword.value = response.data.password; passwordOpen.value = true; }
+    proxy.$modal.msgSuccess(resetPassword ? '调试密码已重置' : enabled === 1 ? '调试入口已开启' : '调试入口已关闭');
+  } catch (_) { getList(); }
+  finally { debugBusy.value[row.id] = false; }
+}
+function clearDebugPassword() { generatedPassword.value = ''; }
+async function copyDebugPassword() {
+  try {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(generatedPassword.value);
+    else {
+      const input = document.createElement('textarea');
+      input.value = generatedPassword.value;
+      input.style.position = 'fixed'; input.style.opacity = '0';
+      document.body.appendChild(input);
+      try { input.select(); if (!document.execCommand('copy')) throw new Error('copy failed'); }
+      finally { input.remove(); }
+    }
+    proxy.$modal.msgSuccess('密码已复制');
+  } catch (_) { proxy.$modal.msgError('复制失败，请手动复制密码'); }
+}
 
 /** 查询APP版本管理列表 */
 function getList() {
