@@ -51,8 +51,3 @@ export function delAppVersion(id) {
     method: 'delete'
   })
 }
-
-// 开关/重置调试密码，独立于普通版本编辑
-export function controlAppDebug(id, data) {
-  return request({ url: '/gf/appVersion/' + id + '/debug', method: 'put', data })
-}
