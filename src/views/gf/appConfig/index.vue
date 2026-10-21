@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-card v-loading="loading" header="APP 配置管理">
-      <el-alert title="以下配置适用于全部安卓设备。治疗时长从下一次扫码会话生效；MQTT 参数保存后设备将重新连接。" type="info" :closable="false" class="mb8" />
+      <el-alert title="以下配置适用于全部安卓设备。治疗时长从下一次扫码会话生效；MQTT 参数保存后设备将重新连接；串口参数在设备空闲时生效。" type="info" :closable="false" class="mb8" />
       <el-form ref="formRef" :model="form" :rules="rules" label-width="160px" style="max-width: 640px">
         <el-form-item label="治疗运行时长" prop="treatmentMinutes">
           <el-input-number v-model="form.treatmentMinutes" :min="1" :max="255" :precision="0" /> <span class="unit">分钟</span>
@@ -9,6 +9,29 @@
         <el-form-item label="心跳间隔" prop="heartbeatSeconds">
           <el-input-number v-model="form.heartbeatSeconds" :min="10" :max="3600" :precision="0" /> <span class="unit">秒</span>
         </el-form-item>
+        <el-divider content-position="left">串口配置</el-divider>
+        <el-form-item label="设备路径" prop="serialDevicePath">
+          <el-input v-model.trim="form.serialDevicePath" placeholder="/dev/ttyUSB5" />
+        </el-form-item>
+        <el-form-item label="波特率" prop="serialBaudRate">
+          <el-input-number v-model="form.serialBaudRate" :min="300" :max="3000000" :precision="0" />
+        </el-form-item>
+        <el-form-item label="数据位" prop="serialDataBits">
+          <el-select v-model="form.serialDataBits"><el-option v-for="value in [5, 6, 7, 8]" :key="value" :label="value" :value="value" /></el-select>
+        </el-form-item>
+        <el-form-item label="停止位" prop="serialStopBits">
+          <el-select v-model="form.serialStopBits"><el-option v-for="value in [1, 2]" :key="value" :label="value" :value="value" /></el-select>
+        </el-form-item>
+        <el-form-item label="校验位" prop="serialParity">
+          <el-select v-model="form.serialParity"><el-option label="无" value="none" /><el-option label="偶校验" value="even" /><el-option label="奇校验" value="odd" /></el-select>
+        </el-form-item>
+        <el-form-item label="方向控制 GPIO" prop="serialDirectionGpio">
+          <el-input-number v-model="form.serialDirectionGpio" :min="-1" :max="1024" :precision="0" /> <span class="unit">-1 为关闭</span>
+        </el-form-item>
+        <el-form-item label="帧字节间隔" prop="serialInterByteTimeout">
+          <el-input-number v-model="form.serialInterByteTimeout" :min="1" :max="1000" :precision="0" /> <span class="unit">毫秒</span>
+        </el-form-item>
+        <el-divider content-position="left">MQTT 配置</el-divider>
         <el-form-item label="MQTT 地址" prop="mqttUrl">
           <el-input v-model.trim="form.mqttUrl" placeholder="ws://host:port/mqtt 或 wss://host:port/mqtt" />
         </el-form-item>
@@ -55,10 +78,22 @@ const saving = ref(false)
 const debugBusy = ref(false)
 const passwordOpen = ref(false)
 const generatedPassword = ref('')
-const form = reactive({ treatmentMinutes: 80, heartbeatSeconds: 30, mqttUrl: '', mqttUsername: '', mqttPassword: '', mqttPasswordConfigured: false, revision: 0, debugEnabled: 0, debugRevision: 0 })
+const form = reactive({ treatmentMinutes: 80, heartbeatSeconds: 30,
+  serialDevicePath: '/dev/ttyUSB5', serialBaudRate: 19200, serialDataBits: 8, serialStopBits: 1,
+  serialParity: 'none',
+  serialDirectionGpio: -1, serialInterByteTimeout: 20,
+  mqttUrl: '', mqttUsername: '', mqttPassword: '', mqttPasswordConfigured: false,
+  revision: 0, debugEnabled: 0, debugRevision: 0 })
 const rules = {
   treatmentMinutes: [{ required: true, type: 'number', min: 1, max: 255, message: '请输入 1 至 255 分钟', trigger: 'change' }],
   heartbeatSeconds: [{ required: true, type: 'number', min: 10, max: 3600, message: '请输入 10 至 3600 秒', trigger: 'change' }],
+  serialDevicePath: [{ required: true, pattern: /^\/dev\/[A-Za-z0-9._-]+$/, message: '请输入有效的 /dev/ 串口路径', trigger: 'blur' }],
+  serialBaudRate: [{ required: true, type: 'number', min: 300, max: 3000000, message: '波特率超出范围', trigger: 'change' }],
+  serialDataBits: [{ required: true, type: 'number', min: 5, max: 8, trigger: 'change' }],
+  serialStopBits: [{ required: true, type: 'number', min: 1, max: 2, trigger: 'change' }],
+  serialParity: [{ required: true, type: 'string', trigger: 'change' }],
+  serialDirectionGpio: [{ required: true, type: 'number', min: -1, max: 1024, trigger: 'change' }],
+  serialInterByteTimeout: [{ required: true, type: 'number', min: 1, max: 1000, trigger: 'change' }],
   mqttUrl: [{ required: true, pattern: /^wss?:\/\/\S+$/, message: '请输入 ws:// 或 wss:// 地址', trigger: 'blur' }],
   mqttUsername: [{ required: true, message: '请输入用户名', trigger: 'blur' }]
 }
@@ -77,6 +112,10 @@ async function save() {
   try {
     const { data } = await updateAppConfig({
       treatmentMinutes: form.treatmentMinutes, heartbeatSeconds: form.heartbeatSeconds,
+      serialDevicePath: form.serialDevicePath, serialBaudRate: form.serialBaudRate,
+      serialDataBits: form.serialDataBits, serialStopBits: form.serialStopBits,
+      serialParity: form.serialParity, serialDirectionGpio: form.serialDirectionGpio,
+      serialInterByteTimeout: form.serialInterByteTimeout,
       mqttUrl: form.mqttUrl, mqttUsername: form.mqttUsername, mqttPassword: form.mqttPassword,
       expectedRevision: form.revision
     })
