@@ -2,8 +2,8 @@
  * @Author: 17630921248 1245634367@qq.com
  * @Date: 2025-08-04 13:05:59
  * @LastEditors: 17630921248 1245634367@qq.com
- * @LastEditTime: 2026-07-23 14:15:11
- * @FilePath: \gf-servere:\code\gf-admin\src\views\gf\device\index.vue
+ * @LastEditTime: 2026-10-31 13:17:59
+ * @FilePath: \gf-servere:\code\gf-code\gf-admin\src\views\gf\device\index.vue
  * @Description: Fuck Bug
  * 微信：lizx2066
 -->
@@ -14,9 +14,9 @@
 				<el-form-item label="设备识别号" prop="serialNumber">
 					<el-input v-model="queryParams.serialNumber" placeholder="请输入设备识别号" clearable @keyup.enter="handleQuery" style="width: 100%" />
 				</el-form-item>
-				<!-- <el-form-item label="部门名称" prop="deptName">
-					<el-input v-model="queryParams.deptName" placeholder="请输入部门名称" clearable @keyup.enter="handleQuery" style="width: 100%" />
-				</el-form-item> -->
+				<el-form-item label="归属部门" prop="deptId">
+					<department-select v-model="queryParams.deptId" placeholder="请选择绑定部门" />
+				</el-form-item>
 				<!-- <el-form-item label="运行状态" prop="status">
 					<el-select v-model="queryParams.status" placeholder="请选择运行状态" clearable style="width: 200px;">
 						<el-option key="1" label="未激活" :value="1" />
@@ -29,6 +29,7 @@
 						<el-option v-for="dict in gf_running_state" :key="dict.value" :label="dict.value == '0' ? '未绑定' : dict.label" :value="dict.value" />
 					</el-select>
 				</el-form-item>
+				<!-- 设备位置筛选暂时隐藏
 				<el-form-item label="设备位置" prop="address">
 					<el-cascader
 						v-model="addressQuery"
@@ -40,6 +41,7 @@
 						:props="{ checkStrictly: true, value: 'label', label: 'label', children: 'children' }"
 					/>
 				</el-form-item>
+				-->
 				<el-form-item>
 					<el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
 					<el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -59,66 +61,35 @@
 				</el-form-item>
 			</el-form>
 		</el-card>
-		<el-card style="margin-top: 20px">
-			<el-row :gutter="30" v-loading="loading" :element-loading-text="loadingText" element-loading-background="rgba(122, 122, 122, 0.8)">
-				<el-col :xs="24" :sm="12" :md="12" :lg="8" :xl="6" v-for="(item, index) in deviceList" :key="index" style="margin-bottom: 30px; text-align: center">
-					<el-card shadow="always">
-						<el-row type="flex" :gutter="10" justify="space-between">
-							<el-col :span="20" style="text-align: left">
-								<svg-icon icon-class="device" />
-								{{ item.deptId != 0 ? item.deptName : '尚未绑定' }}
-							</el-col>
-							<el-col :span="4">
-								<div style="font-size: 28px; color: #ccc">
-									<svg-icon v-if="item.device.status == 2" icon-class="wifi_4" />
-									<svg-icon v-else icon-class="wifi_0" />
-								</div>
-							</el-col>
-						</el-row>
-						<el-row :gutter="10">
-							<el-col :span="15">
-								<el-descriptions :column="1" size="mini" style="white-space: nowrap">
-									<!-- <el-descriptions-item label="设备名称">
-										{{ item.device.deviceName }}
-									</el-descriptions-item> -->
-									<el-descriptions-item label="设备编号">
-										{{ item.serialNumber }}
-									</el-descriptions-item>
-									<el-descriptions-item label="设备类型">
-										<el-tag :type="item.deviceType == '4G' ? 'primary' : 'success'">{{ item.deviceType }}</el-tag>
-									</el-descriptions-item>
-									<el-descriptions-item label="设备状态">
-										<!-- <dict-tag :options="gf_running_state" :value="item.runningState" style="display:inline-block;" /> -->
-										<el-tag :type="item.runningState == 0 ? 'danger' : item.runningState == 1 ? 'success' : 'warning'">
-											{{ item.runningState == 0 ? '未绑定' : item.runningState == 1 ? '运行中' : '已停止' }}
-										</el-tag>
-									</el-descriptions-item>
-									<!-- <el-descriptions-item label="运行状态">
-										<el-tag :type="item.status == 2 ? 'success' : 'danger'">{{ item.status == 2 ? '在线' :
-											'离线' }}</el-tag>
-									</el-descriptions-item> -->
-									<el-descriptions-item label="激活时间">
-										<!-- {{ parseTime(item.createTime, '{y}-{m}-{d}') }} -->
-										{{ item.createTime }}
-									</el-descriptions-item>
-								</el-descriptions>
-							</el-col>
-							<el-col :span="9">
-								<el-image class="device_image" :src="deviceImg" fit="cover"></el-image>
-							</el-col>
-						</el-row>
-						<el-button-group style="display: flex; flex-wrap: wrap; gap: 5px">
+		<div class="device-grid" v-loading="loading" :element-loading-text="loadingText">
+			<article v-for="item in deviceList" :key="item.id || item.serialNumber" class="device-card">
+				<header class="device-card-header">
+					<div class="device-department"><svg-icon icon-class="device" /> {{ item.deptId ? (item.deptName || '尚未绑定') : '尚未绑定' }}</div>
+					<el-tag :type="item.device?.status == 2 ? 'success' : 'info'" effect="light" round>{{ item.device?.status == 2 ? '在线' : '离线' }}</el-tag>
+				</header>
+				<div class="device-card-main">
+					<div class="device-details">
+						<div class="device-field-label">设备编号</div>
+						<div class="device-serial">{{ item.serialNumber || '—' }}</div>
+						<div class="device-tags">
+							<el-tag size="small" :type="item.deviceType === 'ANDROID' ? 'success' : 'info'">{{ item.deviceType === 'ANDROID' ? '安卓客户端' : item.deviceType === 'UNKNOWN' ? '未知类型' : item.deviceType }}</el-tag>
+							<el-tag size="small" :type="item.runningState == 0 ? 'info' : item.runningState == 1 ? 'success' : 'warning'">{{ item.runningState == 0 ? '未绑定' : item.runningState == 1 ? '运行中' : '已停止' }}</el-tag>
+						</div>
+					</div>
+					<el-image class="device-thumbnail" :src="deviceImg" fit="contain" />
+				</div>
+				<div class="device-network"><span class="device-field-label">地址</span><span>{{ item.device?.networkAddress || '暂无地址' }}</span></div>
+				<div class="device-created"><span class="device-field-label">激活时间</span><span>{{ item.createTime || '—' }}</span></div>
+				<div class="device-actions">
 							<el-button type="primary" size="small" icon="edit" @click="handleUpdate(item)" v-hasPermi="['gf:device:edit']">绑定</el-button>
 							<el-button v-if="item.deviceType == 'WIFI'" type="danger" size="small" @click="handleReset(item)" v-hasPermi="['gf:device:remove']">重置配网</el-button>
 							<el-button v-if="item.deviceType == 'WIFI'" type="info" size="small" @click="handleReboot(item)" v-hasPermi="['gf:device:remove']">重启</el-button>
 							<el-button v-if="item.deviceType == 'WIFI'" type="success" size="small" @click="handleOTA(item)" v-hasPermi="['gf:device:remove']">OTA</el-button>
 							<el-button type="warning" size="small" icon="delete" @click="handleBind(item)" v-hasPermi="['gf:device:remove']">解绑</el-button>
-						</el-button-group>
-					</el-card>
-				</el-col>
-			</el-row>
-			<el-empty description="暂无数据，请添加设备" v-if="total == 0"></el-empty>
-		</el-card>
+						</div>
+			</article>
+		</div>
+		<el-empty v-if="!loading && total == 0" description="暂无数据，请添加设备" />
 
 		<pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" :pageSizes="[12, 24, 36, 60]" @pagination="getList" />
 
@@ -198,7 +169,7 @@ const data = reactive({
 		pageSize: 12,
 		address: null,
 		serialNumber: null,
-		// deptName: null,
+		deptId: null,
 		runningState: null,
 	},
 	locationData: [],
@@ -215,7 +186,8 @@ function getList() {
 	loading.value = true;
 	listDevice(queryParams.value).then(response => {
 		response.data.rows.forEach(item => {
-			item.deviceType = item.serialNumber && item.serialNumber.includes('GFKM-') ? 'WIFI' : '4G';
+			const serialNumber = String(item.serialNumber || '').trim();
+			item.deviceType = serialNumber.startsWith('GFKM-') ? 'WIFI' : /^\d{15}$/.test(serialNumber) ? '4G' : serialNumber ? 'ANDROID' : 'UNKNOWN';
 		});
 		deviceList.value = response.data.rows;
 		total.value = response.data.total;
@@ -670,4 +642,24 @@ onBeforeUnmount(() => {
 		max-width: 120px;
 	}
 }
+</style>
+
+<style scoped lang="scss">
+.device-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; margin-top: 20px; }
+.device-card { min-width: 0; padding: 20px; background: #fff; border: 1px solid #e5eaf0; border-radius: 12px; box-shadow: 0 3px 12px #182c4610; }
+.device-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #f0f2f5; }
+.device-department { font-size: 15px; font-weight: 600; color: #25354a; overflow-wrap: anywhere; }
+.device-card-main { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; }
+.device-details { min-width: 0; }
+.device-field-label { color: #8692a2; font-size: 12px; }
+.device-serial { margin-top: 7px; font-size: 15px; font-weight: 600; font-family: monospace; color: #25354a; overflow-wrap: anywhere; }
+.device-tags { display: flex; gap: 8px; margin-top: 12px; }
+.device-thumbnail { width: 62px; height: 100px; flex-shrink: 0; }
+.device-network, .device-created { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; font-size: 13px; line-height: 1.7; color: #4c5c70; }
+.device-network { background: #f5f8fa; padding: 10px 12px; border-radius: 6px; }
+.device-network span:last-child { overflow-wrap: anywhere; white-space: pre-wrap; }
+.device-created { padding: 12px; }
+.device-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 14px; border-top: 1px solid #f0f2f5; }
+.device-actions .el-button { margin-left: 0; }
+@media (max-width: 480px) { .device-grid { grid-template-columns: minmax(0, 1fr); } }
 </style>
