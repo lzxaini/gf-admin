@@ -73,6 +73,7 @@
 					<div class="info-row">
 						<div class="info-item full-width">
 							<el-button v-if="client.typeName === 'wifi模块'" type="primary" @click="openWifiDialog(client.clientid)">WiFi通信</el-button>
+							<el-button v-if="client.typeName === '安卓客户端'" type="primary" @click="open4GDialog(client.clientid)">在线调试</el-button>
 							<el-button v-if="client.typeName === '4G模块'" type="success" @click="open4GDialog(client.clientid)">4G通信</el-button>
 						</div>
 					</div>
@@ -119,6 +120,7 @@ const password = 'ByufSsGA96Q:Dd2';
 /** 客户端类型配置 */
 const CLIENT_TYPES = [
 	{ prefix: 'GFKM-', typeName: 'wifi模块', typeColor: 'warning', needSubscribe: true },
+	{ prefix: 'app_', typeName: '安卓客户端', typeColor: 'info', needSubscribe: true },
 	{ prefix: 'wx_', typeName: '微信小程序', typeColor: 'success', needSubscribe: false },
 	{ prefix: 'web-', typeName: 'PC管理后台', typeColor: 'primary', needSubscribe: false },
 	{ prefix: 'server-', typeName: '系统服务端', typeColor: 'danger', needSubscribe: false },

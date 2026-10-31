@@ -8,10 +8,10 @@
  * 微信:lizx2066
 -->
 <template>
-	<el-dialog v-model="dialogVisible" :title="`4G模块通信 - ${clientId}`" width="800px" :close-on-click-modal="false" @close="handleClose">
+	<el-dialog v-model="dialogVisible" :title="`${isAndroid ? '安卓在线调试' : '4G模块通信'} - ${clientId}`" width="800px" :close-on-click-modal="false" @close="handleClose">
 		<!-- 快捷指令按钮 -->
 		<div class="command-buttons">
-			<el-button v-for="cmd in commands" :key="cmd.command" :type="cmd.type" size="small" @click="handleCommandClick(cmd)">
+			<el-button v-for="cmd in commands" :key="cmd.label" :type="cmd.type" size="small" @click="handleCommandClick(cmd)">
 				{{ cmd.label }}
 			</el-button>
 		</div>
@@ -41,7 +41,8 @@
 
 		<!-- 自定义指令输入 -->
 		<div class="custom-input">
-			<el-input v-model="customCommand" placeholder="输入自定义指令，如：AT+CSQ\r\n" @keyup.enter="sendCustomCommand">
+			<el-select v-if="isAndroid" v-model="customFormat" style="width: 120px; margin-bottom: 8px"><el-option label="HEX" value="hex" /><el-option label="文本" value="text" /></el-select>
+			<el-input v-model="customCommand" :placeholder="isAndroid ? '输入 HEX 字节，例如 06 00 00 01' : '输入 AT 指令'" @keyup.enter="sendCustomCommand">
 				<template #append>
 					<el-button type="primary" @click="sendCustomCommand" :loading="sending">发送</el-button>
 				</template>
@@ -56,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, watch } from 'vue';
+import { ref, nextTick, watch, computed, onBeforeUnmount } from 'vue';
 import { useMQTTStore } from '@/store/modules/useMQTTStore';
 import dayjs from 'dayjs';
 import { Location } from '@element-plus/icons-vue';
@@ -84,10 +85,11 @@ const dialogVisible = ref(false);
 const messages = ref([]);
 const customCommand = ref('');
 const sending = ref(false);
+const customFormat = ref('hex');
 const messageContainer = ref(null);
 
 // 预定义指令列表
-const commands = [
+const fourGCommands = [
 	{ label: '设备重启', command: 'AT+RESET\\r\\n', type: 'danger', isHex: false, needConfirm: true },
 	{ label: '内置版本', command: 'ATI\\r\\n', type: 'info', isHex: false, needConfirm: false },
 	{ label: '版本号', command: 'GVI', type: 'primary', isHex: false, needConfirm: false },
@@ -101,12 +103,28 @@ const commands = [
 	{ label: '强制结束', command: '100000FF', type: 'danger', isHex: true, needConfirm: true },
 ];
 
+const isAndroid = computed(() => props.clientId.startsWith('app_'));
+// App 的连接 ID 包含启动时间，业务主题只使用稳定的设备 ID。
+const deviceId = computed(() => isAndroid.value ? props.clientId.replace(/^app_\d+_/, '') : props.clientId);
+const commands = computed(() => isAndroid.value ? [
+	{ label: '扫码成功', command: '06000001', type: 'success', isHex: true, needConfirm: true },
+	// App 收到 END 后会结束整个扫码会话，并停止实际运行的服务。
+	{ label: '结束当前会话', command: '05015002', type: 'danger', isHex: true, needConfirm: true },
+	...[['脸部方案', '01'], ['激活导入', '02'], ['水滴渗透', '03']].flatMap(([label, service]) =>
+		[['开始', '01'], ['结束', '02'], ['暂停', '03']].map(([action, code]) => ({
+			label: `${label}${action}`, command: `05${service}50${code}`, type: { '01': 'success', '02': 'danger', '03': 'warning' }[code], isHex: true, needConfirm: true,
+		}))),
+] : fourGCommands);
+let responseTimer = null;
+
 // Watch modelValue
 watch(
 	() => props.modelValue,
 	val => {
 		dialogVisible.value = val;
 		if (val) {
+			messages.value = [];
+			customCommand.value = '';
 			// 对话框打开时订阅消息
 			subscribeMessages();
 		}
@@ -122,7 +140,7 @@ watch(dialogVisible, val => {
 function subscribeMessages() {
 	if (!props.clientId) return;
 
-	const responseTopic = `/resp/${props.clientId}`;
+	const responseTopic = `/resp/${deviceId.value}`;
 	mqttStore.subscribe(responseTopic);
 
 	// 监听消息
@@ -146,7 +164,7 @@ function handleCommandClick(cmd) {
 
 // 处理MQTT消息
 function handleMqttMessage(topic, message) {
-	if (topic === `/resp/${props.clientId}`) {
+	if (topic === `/resp/${deviceId.value}`) {
 		let displayContent = '';
 		let isHexResponse = false;
 		let hexLabel = '收到响应';
@@ -155,7 +173,7 @@ function handleMqttMessage(topic, message) {
 		if (message instanceof Uint8Array || message instanceof ArrayBuffer) {
 			const bytes = message instanceof ArrayBuffer ? new Uint8Array(message) : message;
 			// 只有06和05开头的显示为HEX
-			if (bytes.length > 0 && (bytes[0] === 0x06 || bytes[0] === 0x05)) {
+			if (bytes.length > 0 && (isAndroid.value || bytes[0] === 0x06 || bytes[0] === 0x05)) {
 				shouldDisplayAsHex = true;
 				displayContent = Array.from(bytes)
 					.map(byte => byte.toString(16).padStart(2, '0').toUpperCase())
@@ -201,6 +219,7 @@ function handleMqttMessage(topic, message) {
 			location: location,
 		});
 		sending.value = false;
+		clearTimeout(responseTimer);
 	}
 }
 
@@ -216,8 +235,12 @@ function sendCommand(command, isHex = false) {
 		return;
 	}
 
+	if (!mqttStore.state.isConnected) return proxy.$modal.msgError('MQTT 未连接');
+	if (isHex && !/^(?:[0-9a-fA-F]{2})+$/.test(command.replace(/\s/g, ''))) {
+		return proxy.$modal.msgWarning('HEX 必须为完整的十六进制字节');
+	}
 	sending.value = true;
-	const requestTopic = `/req/${props.clientId}`;
+	const requestTopic = `/req/${deviceId.value}`;
 	// 添加发送消息
 	addMessage({
 		type: 'send',
@@ -243,7 +266,7 @@ function sendCommand(command, isHex = false) {
 	mqttStore.publish(requestTopic, messageToSend);
 
 	// 5秒超时处理
-	setTimeout(() => {
+	responseTimer = setTimeout(() => {
 		if (sending.value) {
 			sending.value = false;
 			addMessage({
@@ -263,7 +286,7 @@ function sendCustomCommand() {
 		return;
 	}
 
-	sendCommand(customCommand.value, false);
+	sendCommand(customCommand.value, isAndroid.value && customFormat.value === 'hex');
 	customCommand.value = '';
 }
 
@@ -301,9 +324,13 @@ function openBaiduMap(location) {
 	window.open(url, '_blank');
 }
 
+onBeforeUnmount(handleClose);
+
 // 关闭对话框
 function handleClose() {
 	dialogVisible.value = false;
+	clearTimeout(responseTimer);
+	sending.value = false;
 	// 取消订阅
 	if (props.clientId) {
 		mqttStore.offMessage(handleMqttMessage);
