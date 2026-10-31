@@ -43,6 +43,12 @@ export const constantRoutes = [
     hidden: true
   },
   {
+    path: '/app-download',
+    component: () => import('@/views/app-download/index.vue'),
+    hidden: true,
+    meta: { title: '禾壹净 APP 下载' }
+  },
+  {
     path: '/register',
     component: () => import('@/views/register'),
     hidden: true
