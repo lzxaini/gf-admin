@@ -18,9 +18,9 @@
         <p class="intro">打开禾壹净 APP，随时随地开启更便捷的健康体验。把关心放在手边，让每一天都自在从容。</p>
 
         <div class="download-action">
-          <a v-if="downloadUrl" class="download-button" :href="downloadUrl" target="_blank" rel="noopener noreferrer">
+          <a v-if="downloadUrl" class="download-button" :href="downloadUrl" :aria-disabled="downloading" @click.prevent="downloadApp">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            下载 APP
+            {{ downloading ? '下载准备中…' : '下载 APP' }}
             <span class="button-arrow">↗</span>
           </a>
           <span v-else class="download-button disabled" aria-disabled="true">
@@ -61,10 +61,43 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import logo from '@/assets/logo/logo.png'
 import logoText from '@/assets/logo/logo-text.png'
 // 将下方地址替换为实际的 APP 下载链接；留空时按钮不会跳转。
 const downloadUrl = 'https://cdn.hyj001.top/App/distribution.apk'
+const downloading = ref(false)
+
+async function downloadApp() {
+  if (downloading.value) return
+
+  const now = new Date()
+  const timestamp = [now.getFullYear(), now.getMonth() + 1, now.getDate(), now.getHours(), now.getMinutes()]
+    .map(value => String(value).padStart(2, '0'))
+    .join('')
+
+  downloading.value = true
+  let objectUrl
+  let link
+  try {
+    // 跨域链接的 download 属性可能被忽略，转为 Blob 后指定文件名。
+    const response = await fetch(downloadUrl)
+    if (!response.ok) throw new Error(`Download failed: ${response.status}`)
+    objectUrl = URL.createObjectURL(await response.blob())
+    link = document.createElement('a')
+    link.href = objectUrl
+    link.download = `distribution_${timestamp}.apk`
+    document.body.appendChild(link)
+    link.click()
+  } catch (error) {
+    ElMessage.error('下载失败，请稍后重试；若持续失败，请检查下载服务器的跨域配置')
+  } finally {
+    link?.remove()
+    if (objectUrl) setTimeout(() => URL.revokeObjectURL(objectUrl), 60000)
+    downloading.value = false
+  }
+}
 </script>
 
 <style scoped>
