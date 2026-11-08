@@ -161,7 +161,7 @@
 					</el-radio-group>
 				</el-form-item>
 				<el-form-item :label="rechargeOperation === 'deduct' ? '扣减点数' : '充值点数'" required>
-					<el-input-number v-model="rechargeAmount" :min="0.01" :max="99999999.99" :precision="2"
+					<el-input-number v-model="rechargeAmount" :min="1" :max="99999999" :precision="0"
 						:step="1" :disabled="rechargeSubmitting" style="width: 100%" />
 				</el-form-item>
 				<el-form-item label="调整后点数">
