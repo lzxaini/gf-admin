@@ -143,26 +143,42 @@
 			</template>
 		</el-dialog>
 
-		<el-dialog title="充值点数" v-model="rechargeOpen" :width="isMobile ? '95%' : '600px'" append-to-body>
-			<el-form :label-width="isMobile ? '80px' : '100px'" style="margin: 20px 0;" v-if="rechargeInfo">
-				<el-row>
-					<el-col :xs="24" :sm="12">
-						<el-form-item label="部门">
-							<el-input v-model="rechargeInfo.deptName" :disabled="true" />
-						</el-form-item>
-					</el-col>
-					<el-col :xs="24" :sm="12">
-						<el-form-item label="充值点数">
-							<el-input-number v-model="rechargeAmount" placeholder="请输入充值点数" style="width: 100%" />
-						</el-form-item>
-					</el-col>
-				</el-row>
+		<el-dialog title="部门点数调整" v-model="rechargeOpen" :width="isMobile ? '95%' : '600px'"
+			append-to-body :close-on-click-modal="false" :close-on-press-escape="!rechargeSubmitting"
+			:show-close="!rechargeSubmitting" @closed="resetRecharge">
+			<el-form v-if="rechargeInfo" v-loading="rechargeLoading" :label-width="isMobile ? '90px' : '110px'">
+				<el-form-item label="部门">
+					<el-input :model-value="rechargeInfo.deptName" disabled />
+				</el-form-item>
+				<el-form-item label="当前点数">
+					<span>{{ currentBalance === null ? '未获取' : currentBalance }}</span>
+					<el-button link type="primary" :disabled="rechargeSubmitting || rechargeLoading" @click="loadRechargeBalance">刷新</el-button>
+				</el-form-item>
+				<el-form-item label="操作类型">
+					<el-radio-group v-model="rechargeOperation" :disabled="rechargeSubmitting">
+						<el-radio label="recharge">充值</el-radio>
+						<el-radio label="deduct">减点</el-radio>
+					</el-radio-group>
+				</el-form-item>
+				<el-form-item :label="rechargeOperation === 'deduct' ? '扣减点数' : '充值点数'" required>
+					<el-input-number v-model="rechargeAmount" :min="0.01" :max="99999999.99" :precision="2"
+						:step="1" :disabled="rechargeSubmitting" style="width: 100%" />
+				</el-form-item>
+				<el-form-item label="调整后点数">
+					<span :style="{ color: projectedBalance !== null && Number(projectedBalance) < 0 ? '#f56c6c' : '' }">
+						{{ projectedBalance === null ? '—' : projectedBalance }}
+					</span>
+				</el-form-item>
+				<el-form-item label="操作备注" :required="rechargeOperation === 'deduct'">
+					<el-input v-model="rechargeRemark" type="textarea" maxlength="400" show-word-limit
+						:disabled="rechargeSubmitting" placeholder="减点必须填写原因" />
+				</el-form-item>
 			</el-form>
 			<template #footer>
-				<div class="dialog-footer">
-					<el-button type="primary" @click="rechargeSubmit">确 定</el-button>
-					<el-button @click="rechargeClose">取 消</el-button>
-				</div>
+				<el-button :disabled="rechargeSubmitting" @click="rechargeClose">取消</el-button>
+				<el-button :type="rechargeOperation === 'deduct' ? 'danger' : 'primary'"
+					:loading="rechargeSubmitting" :disabled="rechargeLoading || currentBalance === null"
+					@click="rechargeSubmit">{{ rechargeOperation === 'deduct' ? '确认减点' : '确认充值' }}</el-button>
 			</template>
 		</el-dialog>
 		<select-user ref="selectRef" :roleId="queryParams.roleId" @setUserInfo="setUserInfo" @ok="getList" />
@@ -173,7 +189,7 @@
 import { listDept, getDept, delDept, addDept, updateDept, listDeptExcludeChild } from "@/api/system/dept";
 import areaOptions from '@/utils/areaList.json';
 import selectUser from "./selectUser";
-import { addRechargeRecords } from "../../../api/gf/rechargeRecords";
+import { getDeptBalance, adjustDeptPoints } from "@/api/gf/rechargeRecords";
 
 const { proxy } = getCurrentInstance();
 const { sys_normal_disable, gf_dept_type } = proxy.useDict("sys_normal_disable", "gf_dept_type");
@@ -189,7 +205,18 @@ const refreshTable = ref(true);
 const deptType = ref()
 const rechargeOpen = ref(false);
 const rechargeInfo = ref()
-const rechargeAmount = ref(0)
+const rechargeAmount = ref(1)
+const rechargeOperation = ref('recharge');
+const rechargeRemark = ref('');
+const rechargeLoading = ref(false);
+const rechargeSubmitting = ref(false);
+const currentBalance = ref(null);
+const projectedBalance = computed(() => {
+	if (currentBalance.value === null || !Number.isFinite(rechargeAmount.value)) return null;
+	const balance = Math.round(Number(currentBalance.value) * 100);
+	const amount = Math.round(rechargeAmount.value * 100);
+	return ((balance + (rechargeOperation.value === 'deduct' ? -amount : amount)) / 100).toFixed(2);
+});
 const total = ref(0);
 const data = reactive({
 	form: {},
@@ -343,24 +370,69 @@ function setUserInfo(info) {
 		proxy.$refs["selectRef"].hide();
 	});
 }
+function resetRecharge() {
+	rechargeInfo.value = null;
+	currentBalance.value = null;
+	rechargeAmount.value = 1;
+	rechargeOperation.value = 'recharge';
+	rechargeRemark.value = '';
+}
 function rechargeDialog(row) {
-	rechargeInfo.value = row
-	rechargeOpen.value = true
+	resetRecharge();
+	rechargeInfo.value = { deptId: row.deptId, deptName: row.deptName };
+	rechargeOpen.value = true;
+	loadRechargeBalance();
 }
-function rechargeSubmit() {
-	let params = {
-		deptId: rechargeInfo.value.deptId,
-		deptName: rechargeInfo.value.deptName,
-		rechargeAmount: rechargeAmount.value
+async function loadRechargeBalance() {
+	const deptId = rechargeInfo.value?.deptId;
+	if (!deptId) return;
+	rechargeLoading.value = true;
+	currentBalance.value = null;
+	try {
+		const res = await getDeptBalance(deptId);
+		if (rechargeOpen.value && rechargeInfo.value?.deptId === deptId) {
+			currentBalance.value = res.data;
+		}
+	} catch (_) {
+		// 请求拦截器统一提示错误，未获取余额时禁止提交。
+	} finally {
+		rechargeLoading.value = false;
 	}
-	addRechargeRecords(params).then(res => {
-		proxy.$modal.msgSuccess("充值成功");
-		rechargeOpen.value = false
-	})
 }
-function rechargeClose(row) {
-	rechargeInfo.value = null
-	rechargeOpen.value = false
+async function rechargeSubmit() {
+	if (rechargeSubmitting.value || rechargeLoading.value || currentBalance.value === null) return;
+	if (!Number.isFinite(rechargeAmount.value) || rechargeAmount.value <= 0) {
+		proxy.$modal.msgError('请输入大于0的点数');
+		return;
+	}
+	if (rechargeOperation.value === 'deduct' && !rechargeRemark.value.trim()) {
+		proxy.$modal.msgError('请填写减点原因');
+		return;
+	}
+	if (Number(projectedBalance.value) < 0) {
+		proxy.$modal.msgError('当前部门点数不足');
+		return;
+	}
+	rechargeSubmitting.value = true;
+	try {
+		await adjustDeptPoints({
+			deptId: rechargeInfo.value.deptId,
+			rechargeAmount: rechargeOperation.value === 'deduct' ? -rechargeAmount.value : rechargeAmount.value,
+			remark: rechargeRemark.value.trim()
+		});
+		proxy.$modal.msgSuccess(rechargeOperation.value === 'deduct' ? '减点成功' : '充值成功');
+		await loadRechargeBalance();
+		rechargeAmount.value = 1;
+		rechargeRemark.value = '';
+		getList();
+	} catch (_) {
+		await loadRechargeBalance();
+	} finally {
+		rechargeSubmitting.value = false;
+	}
+}
+function rechargeClose() {
+	if (!rechargeSubmitting.value) rechargeOpen.value = false;
 }
 
 onMounted(() => {

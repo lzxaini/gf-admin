@@ -51,3 +51,13 @@ export function delRechargeRecords(id) {
     method: 'delete'
   })
 }
+
+
+// 部门点数查询及调整，权限与部门页入口保持一致。
+export function getDeptBalance(deptId) {
+  return request({ url: '/gf/rechargeRecords/dept/' + deptId + '/balance', method: 'get' })
+}
+
+export function adjustDeptPoints(data) {
+  return request({ url: '/gf/rechargeRecords/dept/adjust', method: 'post', data })
+}
