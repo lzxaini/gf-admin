@@ -1,7 +1,7 @@
 <template>
   <div class="home-page">
     <template v-if="activeHome === 'statistics'">
-      <div class="home-switch-bar">
+      <div class="home-switch-bar" v-hasPermi="['gf:map:view']">
         <el-button type="primary" plain icon="Switch" @click="activeHome = 'map'">切换到设备地图</el-button>
       </div>
       <div class="app-container statistics-home"><Statistics /></div>
