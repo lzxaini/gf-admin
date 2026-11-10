@@ -7,17 +7,15 @@ export function parseReportTime(value) {
 	return Date.parse(local.test(text) ? text.replace(' ', 'T') + '+08:00' : text);
 }
 
-export function getDeviceStates(item, now, heartbeatSeconds) {
+export function getDeviceStates(item, now) {
 	const value = item.device?.lastReportTime;
 	const reportTime = parseReportTime(value);
 	const age = now - reportTime;
-	// 安卓心跳间隔可配置；传统 WIFI/4G 沿用服务端的 30 秒间隔。
-	const interval = item.deviceType === 'ANDROID' ? heartbeatSeconds : 30;
+	// 与后端固定规则一致：30 秒心跳，连续 3 次未上报即超时。
+	const interval = 30;
 	let onlineState;
 	if (!Number.isFinite(reportTime) || age < -5000) {
 		onlineState = { label: '状态未知', type: 'info', detail: '缺少有效的最后心跳时间，无法确认在线状态' };
-	} else if (!(interval >= 10 && interval <= 3600)) {
-		onlineState = { label: '状态未知', type: 'info', detail: `最后心跳：${value}；未获取到心跳间隔配置，无法确认在线状态` };
 	} else {
 		const online = age < interval * 3 * 1000;
 		onlineState = {

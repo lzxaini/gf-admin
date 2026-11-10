@@ -142,7 +142,6 @@
 import { listDevice, getDevice, getLocationApi, addDevice, updateDevice } from '@/api/gf/device';
 import deviceImg from '@/assets/images/device.png';
 import { useMQTTStore } from '@/store/modules/useMQTTStore';
-import { getAppConfig } from '@/api/gf/appConfig';
 import { getDeviceStates } from './deviceStatus';
 import { h, nextTick } from 'vue';
 const mqttStore = useMQTTStore();
@@ -153,12 +152,9 @@ const { gf_running_state } = proxy.useDict('gf_running_state');
 const addressQuery = ref([]);
 const deviceRows = ref([]);
 const statusNow = ref(Date.now());
-const heartbeatSeconds = ref(null);
-const deviceList = computed(() => deviceRows.value.map(item => ({ ...item, ...getDeviceStates(item, statusNow.value, heartbeatSeconds.value) })));
-let refreshTimer;
+const deviceList = computed(() => deviceRows.value.map(item => ({ ...item, ...getDeviceStates(item, statusNow.value) })));
 let requestVersion = 0;
 let pageActive = true;
-let refreshPending = false;
 const open = ref(false);
 const importDialog = ref(false);
 const loading = ref(true);
@@ -211,24 +207,6 @@ async function getList(silent = false) {
 		// 请求拦截器统一显示错误，保留已有列表。
 	} finally {
 		if (version === requestVersion) loading.value = false;
-	}
-}
-
-async function refreshDeviceStates() {
-	if (!pageActive || document.hidden || refreshPending || loading.value || open.value) return;
-	refreshPending = true;
-	try {
-		if (proxy.$auth.hasPermi('gf:appConfig:query')) {
-			try {
-				const { data } = await getAppConfig();
-				heartbeatSeconds.value = Number(data.heartbeatSeconds) || null;
-			} catch (error) {
-				heartbeatSeconds.value = null;
-			}
-		}
-		if (pageActive) await getList(true);
-	} finally {
-		refreshPending = false;
 	}
 }
 
@@ -540,7 +518,6 @@ function checkMobile() {
 
 onActivated(() => {
 	pageActive = true;
-	refreshDeviceStates();
 });
 onDeactivated(() => {
 	pageActive = false;
@@ -549,22 +526,17 @@ onDeactivated(() => {
 });
 
 onMounted(() => {
-	refreshTimer = setInterval(() => {
-		statusNow.value = Date.now();
-		refreshDeviceStates();
-	}, 15000);
 	checkMobile();
 	window.addEventListener('resize', checkMobile);
 	mqttStore.connect();
 	nextTick(() => {
-		getList().then(refreshDeviceStates);
+		getList();
 		getLocation();
 	});
 });
 // 页面卸载时断开连接
 onBeforeUnmount(() => {
 	pageActive = false;
-	clearInterval(refreshTimer);
 	window.removeEventListener('resize', checkMobile);
 	mqttStore.disconnect();
 });
