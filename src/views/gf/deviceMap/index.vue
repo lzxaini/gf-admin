@@ -13,7 +13,7 @@
   </div>
 </template>
 <script setup name="DeviceMap">
-import { ref, computed, watch, onMounted, onBeforeUnmount, onActivated, onDeactivated } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, onActivated, onDeactivated, nextTick } from 'vue';
 import { listDevice } from '@/api/gf/device';
 import { getDeviceStates } from '../device/deviceStatus';
 const deviceRows = ref([]), statusNow = ref(Date.now());
@@ -23,11 +23,28 @@ const emit = defineEmits(['switch-home']);
 const deptId = ref(null), keyword = ref(''), status = ref(''), loading = ref(false), error = ref(''), ready = ref(false), container = ref(null);
 const pageContainer = ref(null);
 const pageHeight = ref('calc(100dvh - 84px)');
+let layoutFrame, layoutObserver;
 function resizePage() {
-  if (pageContainer.value) {
-    pageHeight.value = Math.max(0, window.innerHeight - pageContainer.value.getBoundingClientRect().top) + 'px';
-  }
-  requestAnimationFrame(() => map?.resize());
+  if (disposed || !active || !pageContainer.value?.isConnected) return;
+  const top = pageContainer.value.getBoundingClientRect().top;
+  const availableHeight = window.innerHeight - top;
+  // 路由过渡时新旧页面同时占位，忽略暂时位于视口外的测量。
+  if (availableHeight <= 0) return;
+  const height = availableHeight + 'px';
+  if (pageHeight.value !== height) pageHeight.value = height;
+  nextTick(() => {
+    if (!disposed && active) map?.resize();
+  });
+}
+function scheduleLayout() {
+  nextTick(() => {
+    if (disposed || !active) return;
+    cancelAnimationFrame(layoutFrame);
+    layoutFrame = requestAnimationFrame(resizePage);
+  });
+}
+function finishPageTransition(event) {
+  if (event.target instanceof Element && event.target.contains(pageContainer.value)) scheduleLayout();
 }
 let map, markers = [], info, disposed = false;
 function position(item) {
@@ -143,10 +160,27 @@ async function initMap() {
   } catch (_) { error.value = '地图加载失败，请检查高德配置和网络后重新打开首页'; }
 }
 watch(deptId, loadDevices); watch(filtered, draw);
-onMounted(() => { resizePage(); window.addEventListener('resize', resizePage); loadDevices(); initMap(); });
-onActivated(() => { active = true; requestAnimationFrame(resizePage); });
-onDeactivated(() => { active = false; });
-onBeforeUnmount(() => { window.removeEventListener('resize', resizePage); disposed = true; map?.destroy(); map = null; });
+onMounted(() => {
+  scheduleLayout();
+  window.addEventListener('resize', scheduleLayout);
+  window.addEventListener('transitionend', finishPageTransition);
+  // 旧路由移除后主内容区尺寸变化，补算地图容器高度。
+  layoutObserver = new ResizeObserver(scheduleLayout);
+  const main = pageContainer.value?.closest('.app-main');
+  if (main) layoutObserver.observe(main);
+  if (pageContainer.value) layoutObserver.observe(pageContainer.value);
+  loadDevices(); initMap();
+});
+onActivated(() => { active = true; scheduleLayout(); });
+onDeactivated(() => { active = false; cancelAnimationFrame(layoutFrame); });
+onBeforeUnmount(() => {
+  disposed = true;
+  cancelAnimationFrame(layoutFrame);
+  layoutObserver?.disconnect();
+  window.removeEventListener('resize', scheduleLayout);
+  window.removeEventListener('transitionend', finishPageTransition);
+  map?.destroy(); map = null;
+});
 </script>
 <style scoped>
 .toolbar { display: flex; justify-content: space-between; align-items: center; }h2 { margin: 0; color: #23364b; }.toolbar p { color: #8491a0; }
