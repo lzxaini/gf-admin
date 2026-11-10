@@ -1,21 +1,40 @@
 <template>
-	<div class="app-container">
+	<div class="app-container mqtt-monitor">
 		<el-card class="header-card">
 			<div class="header-info">
 				<h3>客户端监控</h3>
 				<div class="header-actions">
-					<el-tag type="success" size="large">在线客户端: {{ clientList.length }}</el-tag>
+					<el-tag type="success" size="large">本页在线: {{ onlineClientCount }}</el-tag>
 					<el-button type="primary" :loading="tableLoading" @click="fetchClientList" icon="Refresh">刷新列表</el-button>
 				</div>
 			</div>
+			<el-form :inline="true" class="client-search" @submit.prevent="handleSearch">
+				<el-form-item label="关键词">
+					<el-input v-model="searchInput" placeholder="请输入设备编号或客户端ID" clearable @keyup.enter="handleSearch" @clear="handleSearch" />
+				</el-form-item>
+				<el-form-item label="搜索字段">
+					<el-select v-model="searchField"><el-option label="设备编号 / 客户端ID" value="like_clientid" /><el-option label="IP地址" value="ip_address" /><el-option label="连接类型" value="like_username" /></el-select>
+				</el-form-item>
+				<el-form-item label="本页类型">
+					<el-select v-model="searchType" placeholder="全部类型" clearable>
+						<el-option v-for="type in CLIENT_TYPES" :key="type.typeName" :label="type.typeName" :value="type.typeName" />
+						<el-option label="未知类型" value="未知类型" />
+					</el-select>
+				</el-form-item>
+				<el-form-item>
+					<el-button type="primary" icon="Search" @click="handleSearch">搜索</el-button>
+					<el-button icon="Refresh" @click="resetSearch">重置</el-button>
+				</el-form-item>
+			</el-form>
+			<div class="search-summary">第 {{ pageNum }} 页，本页 {{ clientList.length }} 个客户端，显示 {{ filteredClientList.length }} 个</div>
 		</el-card>
 
 		<div v-loading="tableLoading" class="client-grid">
-			<el-card v-for="client in clientList" :key="client.clientid" class="client-card" shadow="hover">
+			<el-card v-for="client in pagedClientList" :key="client.clientid" class="client-card" shadow="hover">
 				<div class="card-header">
 					<div class="client-id">
 						<el-icon><Connection /></el-icon>
-						<span>{{ client.clientid }}</span>
+						<span>{{ displayClientId(client.clientid) }}</span>
 						<el-tag :type="client.typeColor">{{ client.typeName }}</el-tag>
 					</div>
 					<el-tag :type="client.connected ? 'success' : 'danger'" size="small">
@@ -81,7 +100,15 @@
 			</el-card>
 		</div>
 
-		<el-empty v-if="!tableLoading && clientList.length === 0" description="暂无在线客户端" />
+		<el-empty v-if="!tableLoading && filteredClientList.length === 0" :description="clientList.length ? '没有匹配的客户端，请调整搜索条件' : '暂无在线客户端'" />
+		<div class="client-pagination">
+			<span>第 {{ pageNum }} 页</span>
+			<el-select :model-value="pageSize" :disabled="tableLoading" style="width: 110px" @change="changePageSize">
+				<el-option v-for="size in [12, 20, 24, 48, 50, 100]" :key="size" :label="`${size}条/页`" :value="size" />
+			</el-select>
+			<el-button :disabled="tableLoading || pageNum === 1" @click="fetchClientList(pageNum - 1)">上一页</el-button>
+			<el-button :disabled="tableLoading || !nextCursor" @click="fetchClientList(pageNum + 1)">下一页</el-button>
+		</div>
 	</div>
 
 	<!-- WiFi模块通信对话框 -->
@@ -102,9 +129,54 @@ const mqttStore = useMQTTStore();
 const { proxy } = getCurrentInstance();
 const tableLoading = ref(false);
 const clientList = ref([]);
+const searchInput = ref('');
+const searchKeyword = ref('');
+const searchType = ref('');
+const searchField = ref('like_clientid');
+const activeSearch = ref({});
+const pageCursors = ref(['']);
+const nextCursor = ref('');
+const pageNum = ref(1);
+const pageSize = ref(20);
+const onlineClientCount = computed(() => clientList.value.filter(client => client.connected).length);
+// 仅裁剪展示用 ID，通信、订阅和卡片 key 仍使用原始 clientid。
+function displayClientId(clientId) {
+	return String(clientId || '').replace(/^app_\d+_(?=.+)/, '');
+}
+
+const filteredClientList = computed(() => clientList.value.filter(client => !searchType.value || client.typeName === searchType.value));
+const pagedClientList = filteredClientList;
+
+function handleSearch() {
+	if (fetchingClients || tableLoading.value) return;
+	searchKeyword.value = searchInput.value.trim();
+	activeSearch.value = searchKeyword.value ? { [searchField.value]: searchKeyword.value } : {};
+	pageCursors.value = [''];
+	preparedNextPage = null;
+	fetchClientList(1);
+}
+
+function resetSearch() {
+	if (fetchingClients || tableLoading.value) return;
+	searchInput.value = '';
+	searchKeyword.value = '';
+	searchType.value = '';
+	searchField.value = 'like_clientid';
+	handleSearch();
+}
+
+function changePageSize(size) {
+	if (fetchingClients) return;
+	pageSize.value = size;
+	pageCursors.value = [''];
+	preparedNextPage = null;
+	fetchClientList(1);
+}
 const MQTT_TOKEN_KEY = 'mqtt_api_token';
 let timer = null;
 let isFirstLoad = true;
+let fetchingClients = false;
+let disposed = false;
 
 // WiFi对话框相关
 const wifiDialogVisible = ref(false);
@@ -195,33 +267,74 @@ async function requestWithAuth(requestFn) {
 	}
 }
 
-// 获取客户端列表
-async function fetchClientList() {
-	// 只有首次加载才显示loading，后续静默刷新
-	if (isFirstLoad) {
-		tableLoading.value = true;
+// 游标可能指向空批次，必须实际读取后才能确认是否还有数据。
+async function readClientPage(startCursor) {
+	let cursor = startCursor;
+	const visited = new Set();
+	while (!disposed) {
+		const res = await requestWithAuth(token => axios.get(
+			`${import.meta.env.VITE_APP_EMQX_SERVER_API}/api/v5/clients_v2`,
+			{
+				headers: { Authorization: `Bearer ${token}` },
+				params: {
+					limit: pageSize.value,
+					...(cursor ? { cursor } : {}),
+					...activeSearch.value,
+					fields: 'clientid,username,connected,ip_address,port,keepalive,clean_start,expiry_interval,connected_at,send_msg,recv_msg,client_attrs,created_at,subscriptions_cnt,subscriptions_max',
+				},
+			}
+		));
+		const rows = res.data.data || [];
+		const next = res.data.meta?.cursor || '';
+		if (next && (next === cursor || visited.has(next))) throw new Error('接口返回重复分页游标，请刷新列表');
+		if (rows.length || !next) return { rows, cursor, next };
+		visited.add(next);
+		cursor = next;
 	}
+	return { rows: [], cursor, next: '' };
+}
+
+// 缓存已探测的下一页，点击下一页时直接使用，避免重复请求。
+let preparedNextPage = null;
+async function fetchClientList(targetPage = pageNum.value, silent = false) {
+	if (fetchingClients || disposed) return;
+	if (!Number.isInteger(targetPage)) targetPage = pageNum.value;
+	const cursor = pageCursors.value[targetPage - 1];
+	if (cursor === undefined) return;
+	fetchingClients = true;
+	// 探测期间也禁用翻页及搜索，避免条件与游标串页。
+	tableLoading.value = true;
 	try {
-		const res = await requestWithAuth(token =>
-			axios.get(
-				`${import.meta.env.VITE_APP_EMQX_SERVER_API}/api/v5/clients_v2?limit=100&fields=clientid,username,connected,ip_address,keepalive,connected_at,recv_msg,send_msg,created_at,subscriptions_cnt`,
-				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				}
-			)
-		);
-		clientList.value = res.data.data || [];
-		handleSubscribeAll();
-	} catch (e) {
-		console.log('🥵 ~ fetchClientList ~ e: ', e);
-		proxy.$modal.msgError('获取客户端列表失败: ' + (e.response?.data?.message || e.message));
-	} finally {
-		if (isFirstLoad) {
-			tableLoading.value = false;
-			isFirstLoad = false;
+		let result = targetPage === pageNum.value + 1 && preparedNextPage?.cursor === cursor
+			? preparedNextPage : await readClientPage(cursor);
+		preparedNextPage = null;
+		while (!result.rows.length && targetPage > 1) {
+			if (targetPage > pageNum.value && clientList.value.length) {
+				nextCursor.value = '';
+				pageCursors.value = pageCursors.value.slice(0, pageNum.value);
+				return;
+			}
+			targetPage--;
+			result = await readClientPage(pageCursors.value[targetPage - 1] || '');
 		}
+		const upcoming = result.next ? await readClientPage(result.next) : null;
+		if (disposed) return;
+		preparedNextPage = upcoming?.rows.length ? upcoming : null;
+		pageCursors.value[targetPage - 1] = result.cursor;
+		clientList.value = result.rows;
+		pageNum.value = targetPage;
+		nextCursor.value = preparedNextPage?.cursor || '';
+		pageCursors.value = pageCursors.value.slice(0, targetPage);
+		if (nextCursor.value) pageCursors.value[targetPage] = nextCursor.value;
+		handleSubscribeAll();
+		isFirstLoad = false;
+	} catch (e) {
+		preparedNextPage = null;
+		nextCursor.value = '';
+		if (!disposed) proxy.$modal.msgError('获取客户端列表失败: ' + (e.response?.data?.message || e.message));
+	} finally {
+		fetchingClients = false;
+		tableLoading.value = false;
 	}
 }
 /** 打开WiFi通信对话框 */
@@ -269,15 +382,14 @@ function handleSubscribeAll() {
 onMounted(() => {
 	mqttStore.connect();
 	// 监听MQTT连接成功后再加载列表
-	const stopWatch = watch(
+	watch(
 		() => mqttStore.state.isConnected,
 		val => {
-			if (val) {
+			if (val && !timer) {
 				fetchClientList();
 				timer = setInterval(() => {
-					fetchClientList();
+					fetchClientList(pageNum.value, true);
 				}, 1000 * 10);
-				stopWatch(); // 只监听一次
 			}
 		},
 		{ immediate: true }
@@ -285,6 +397,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+	disposed = true;
 	mqttStore.disconnect();
 	// 组件卸载时清除定时器
 	if (timer) {
@@ -303,13 +416,17 @@ onBeforeUnmount(() => {
 	padding-bottom: 16px;
 	border-bottom: 1px solid #ebeef5;
 }
-.app-container {
+.mqtt-monitor {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
 	padding: 24px;
 	background: #f5f7fa;
 	min-height: calc(100vh - 84px);
 }
 
 .header-card {
+	flex-shrink: 0;
 	margin-bottom: 20px;
 }
 
@@ -318,6 +435,11 @@ onBeforeUnmount(() => {
 	justify-content: space-between;
 	align-items: center;
 }
+
+.client-search { margin-top: 20px; }
+.client-search :deep(.el-input) { width: 340px; max-width: 100%; }
+.client-search :deep(.el-select) { width: 180px; }
+.search-summary { color: #909399; font-size: 13px; }
 
 .header-actions {
 	display: flex;
@@ -336,6 +458,29 @@ onBeforeUnmount(() => {
 	grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
 	gap: 20px;
 	margin-bottom: 20px;
+}
+
+.client-pagination {
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-top: auto;
+	flex-shrink: 0;
+	display: flex;
+	justify-content: flex-end;
+	padding: 4px 0 12px;
+}
+.client-pagination :deep(.el-pagination) {
+	position: static;
+	height: auto;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	row-gap: 12px;
+}
+@media (max-width: 768px) {
+	.client-pagination { justify-content: center; }
+	.client-pagination :deep(.el-pagination) { justify-content: center; }
+	.client-pagination :deep(.el-pagination__jump) { display: none; }
 }
 
 .client-card {

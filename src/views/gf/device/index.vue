@@ -24,8 +24,8 @@
 						<el-option key="3" label="离线" :value="3" />
 					</el-select>
 				</el-form-item> -->
-				<el-form-item label="绑定状态" prop="runningState">
-					<el-select v-model="queryParams.runningState" placeholder="请选择绑定状态" clearable style="width: 100%; min-width: 200px">
+				<el-form-item label="运行状态" prop="runningState">
+					<el-select v-model="queryParams.runningState" placeholder="请选择运行状态" clearable style="width: 100%; min-width: 200px">
 						<el-option v-for="dict in gf_running_state" :key="dict.value" :label="dict.value == '0' ? '未绑定' : dict.label" :value="dict.value" />
 					</el-select>
 				</el-form-item>
@@ -65,7 +65,9 @@
 			<article v-for="item in deviceList" :key="item.id || item.serialNumber" class="device-card">
 				<header class="device-card-header">
 					<div class="device-department"><svg-icon icon-class="device" /> {{ item.deptId ? (item.deptName || '尚未绑定') : '尚未绑定' }}</div>
-					<el-tag :type="item.device?.status == 2 ? 'success' : 'info'" effect="light" round>{{ item.device?.status == 2 ? '在线' : '离线' }}</el-tag>
+					<el-tooltip :content="item.onlineState.detail" placement="top">
+						<el-tag :type="item.onlineState.type" effect="light" round>{{ item.onlineState.label }}</el-tag>
+					</el-tooltip>
 				</header>
 				<div class="device-card-main">
 					<div class="device-details">
@@ -73,7 +75,7 @@
 						<div class="device-serial">{{ item.serialNumber || '—' }}</div>
 						<div class="device-tags">
 							<el-tag size="small" :type="item.deviceType === 'ANDROID' ? 'success' : 'info'">{{ item.deviceType === 'ANDROID' ? '安卓客户端' : item.deviceType === 'UNKNOWN' ? '未知类型' : item.deviceType }}</el-tag>
-							<el-tag size="small" :type="item.runningState == 0 ? 'info' : item.runningState == 1 ? 'success' : 'warning'">{{ item.runningState == 0 ? '未绑定' : item.runningState == 1 ? '运行中' : '已停止' }}</el-tag>
+							<el-tag size="small" :type="item.runtimeState.type">{{ item.runtimeState.label }}</el-tag>
 						</div>
 					</div>
 					<el-image class="device-thumbnail" :src="deviceImg" fit="contain" />
@@ -140,7 +142,8 @@
 import { listDevice, getDevice, getLocationApi, addDevice, updateDevice } from '@/api/gf/device';
 import deviceImg from '@/assets/images/device.png';
 import { useMQTTStore } from '@/store/modules/useMQTTStore';
-import { set } from 'nprogress';
+import { getAppConfig } from '@/api/gf/appConfig';
+import { getDeviceStates } from './deviceStatus';
 import { h, nextTick } from 'vue';
 const mqttStore = useMQTTStore();
 
@@ -148,7 +151,14 @@ const { proxy } = getCurrentInstance();
 const { gf_running_state } = proxy.useDict('gf_running_state');
 
 const addressQuery = ref([]);
-const deviceList = ref([]);
+const deviceRows = ref([]);
+const statusNow = ref(Date.now());
+const heartbeatSeconds = ref(null);
+const deviceList = computed(() => deviceRows.value.map(item => ({ ...item, ...getDeviceStates(item, statusNow.value, heartbeatSeconds.value) })));
+let refreshTimer;
+let requestVersion = 0;
+let pageActive = true;
+let refreshPending = false;
 const open = ref(false);
 const importDialog = ref(false);
 const loading = ref(true);
@@ -182,18 +192,44 @@ const data = reactive({
 const { queryParams, form, rules, locationData } = toRefs(data);
 
 /** 查询GF设备管理列表 */
-function getList() {
-	loading.value = true;
-	listDevice(queryParams.value).then(response => {
+async function getList(silent = false) {
+	silent = silent === true;
+	const version = ++requestVersion;
+	if (!silent) loading.value = true;
+	try {
+		const response = await listDevice({ ...queryParams.value });
+		if (!pageActive || version !== requestVersion) return;
 		response.data.rows.forEach(item => {
 			const serialNumber = String(item.serialNumber || '').trim();
 			item.deviceType = serialNumber.startsWith('GFKM-') ? 'WIFI' : /^\d{15}$/.test(serialNumber) ? '4G' : serialNumber ? 'ANDROID' : 'UNKNOWN';
 		});
-		deviceList.value = response.data.rows;
+		deviceRows.value = response.data.rows;
 		total.value = response.data.total;
-		loading.value = false;
-		handleSubscribeAll();
-	});
+		statusNow.value = Date.now();
+		if (!silent) handleSubscribeAll();
+	} catch (error) {
+		// 请求拦截器统一显示错误，保留已有列表。
+	} finally {
+		if (version === requestVersion) loading.value = false;
+	}
+}
+
+async function refreshDeviceStates() {
+	if (!pageActive || document.hidden || refreshPending || loading.value || open.value) return;
+	refreshPending = true;
+	try {
+		if (proxy.$auth.hasPermi('gf:appConfig:query')) {
+			try {
+				const { data } = await getAppConfig();
+				heartbeatSeconds.value = Number(data.heartbeatSeconds) || null;
+			} catch (error) {
+				heartbeatSeconds.value = null;
+			}
+		}
+		if (pageActive) await getList(true);
+	} finally {
+		refreshPending = false;
+	}
 }
 
 // 取消按钮
@@ -268,7 +304,6 @@ function submitForm() {
 			if (form.value.id != null) {
 				let params = {
 					...form.value,
-					runningState: 2,
 				};
 				updateDevice(params).then(response => {
 					proxy.$modal.msgSuccess('修改成功');
@@ -503,17 +538,33 @@ function checkMobile() {
 	isMobile.value = window.innerWidth <= 768;
 }
 
+onActivated(() => {
+	pageActive = true;
+	refreshDeviceStates();
+});
+onDeactivated(() => {
+	pageActive = false;
+	requestVersion++;
+	loading.value = false;
+});
+
 onMounted(() => {
+	refreshTimer = setInterval(() => {
+		statusNow.value = Date.now();
+		refreshDeviceStates();
+	}, 15000);
 	checkMobile();
 	window.addEventListener('resize', checkMobile);
 	mqttStore.connect();
 	nextTick(() => {
-		getList();
+		getList().then(refreshDeviceStates);
 		getLocation();
 	});
 });
 // 页面卸载时断开连接
 onBeforeUnmount(() => {
+	pageActive = false;
+	clearInterval(refreshTimer);
 	window.removeEventListener('resize', checkMobile);
 	mqttStore.disconnect();
 });
